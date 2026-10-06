@@ -1,0 +1,60 @@
+#!/bin/bash
+# Einmal pro Benutzer ausfuehren: witzelfitz-setup
+# Richtet alles ein, was ins Home-Verzeichnis gehoert und deshalb
+# nicht im System-Image liegen kann. Mehrfaches Ausfuehren ist unschaedlich.
+
+set -euo pipefail
+
+MARKER="# >>> witzelfitz-os >>>"
+BASHRC="$HOME/.bashrc"
+TMUX_CONF="$HOME/.config/tmux/tmux.conf"
+
+echo "==> Claude Code (offizieller Installer, aktualisiert sich selbst)"
+if command -v claude >/dev/null 2>&1; then
+    echo "    bereits installiert: $(claude --version)"
+else
+    curl -fsSL https://claude.ai/install.sh | bash
+fi
+
+echo "==> tmux-Konfiguration"
+if [ -e "$TMUX_CONF" ]; then
+    echo "    $TMUX_CONF existiert, wird nicht ueberschrieben"
+else
+    mkdir -p "$(dirname "$TMUX_CONF")"
+    cat >"$TMUX_CONF" <<'EOF'
+# Mehrere Agenten nebeneinander: Maus, langer Verlauf, Fenster ab 1
+set -g mouse on
+set -g history-limit 100000
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
+set -sg escape-time 10
+set -g focus-events on
+
+# Neue Fenster und Teilungen im aktuellen Verzeichnis
+bind c new-window -c "#{pane_current_path}"
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+EOF
+fi
+
+echo "==> Shell-Integration"
+if grep -qF "$MARKER" "$BASHRC" 2>/dev/null; then
+    echo "    bereits in $BASHRC eingetragen"
+else
+    cat >>"$BASHRC" <<EOF
+
+$MARKER
+export PATH="\$HOME/.local/bin:\$PATH"
+command -v zoxide >/dev/null && eval "\$(zoxide init bash)"
+command -v direnv >/dev/null && eval "\$(direnv hook bash)"
+command -v fzf >/dev/null && eval "\$(fzf --bash)"
+alias agents='tmux new-session -A -s agents'
+# <<< witzelfitz-os <<<
+EOF
+fi
+
+echo
+echo "Fertig. Neues Terminal oeffnen, dann:"
+echo "  claude     Anmeldung und erste Sitzung"
+echo "  agents     tmux-Sitzung fuer mehrere Agenten"

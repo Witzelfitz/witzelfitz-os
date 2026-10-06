@@ -1,0 +1,25 @@
+# Konfiguration des Installations-ISO (bootc-image-builder)
+
+# Eigener Kickstart ohne Angaben zur Disk: Der Installer fragt deshalb,
+# wohin installiert wird, statt die erste Disk ungefragt zu ueberschreiben.
+[customizations.installer.kickstart]
+contents = """
+lang de_CH.UTF-8
+keyboard --xlayouts=ch
+timezone Europe/Zurich
+"""
+
+[customizations.installer.modules]
+enable = [
+  "org.fedoraproject.Anaconda.Modules.Storage",
+  "org.fedoraproject.Anaconda.Modules.Runtime",
+  "org.fedoraproject.Anaconda.Modules.Network",
+  "org.fedoraproject.Anaconda.Modules.Security",
+  "org.fedoraproject.Anaconda.Modules.Services",
+  "org.fedoraproject.Anaconda.Modules.Users",
+  "org.fedoraproject.Anaconda.Modules.Timezone",
+  "org.fedoraproject.Anaconda.Modules.Localization"
+]
+disable = [
+  "org.fedoraproject.Anaconda.Modules.Subscription",
+]
