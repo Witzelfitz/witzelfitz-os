@@ -23,6 +23,7 @@ echo "==> 2/4 Image pruefen"
 # shellcheck disable=SC2086
 podman run --rm "$IMAGE" rpm -q $PKGS
 podman run --rm "$IMAGE" test -x /usr/bin/witzelfitz-setup
+podman run --rm "$IMAGE" sh -c 'test -f /usr/lib/modules/*/extra/facer/facer.ko'
 
 echo "==> 3/4 ISO bauen"
 TMP="$(mktemp -d -p "$PWD" _bib.XXXXXX)"

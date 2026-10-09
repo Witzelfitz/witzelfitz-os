@@ -1,0 +1,2 @@
+# facer legt die RGB-Geraete mit 0666 an; nur der angemeldete Benutzer soll schreiben
+KERNEL=="acer-gkbbl*", MODE="0660", TAG+="uaccess"

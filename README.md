@@ -28,6 +28,11 @@ Ergebnis ist ein Installations-ISO für einen USB-Stick.
 | `make-iso.sh` | Baut Image und ISO in einem Lauf (Linux, root) |
 | `test-iso.sh` | Startet das ISO in einer VM: UEFI, leere 40-GB-Disk, kein Netzwerk |
 | `build-windows.ps1` | Dasselbe unter Windows über WSL 2 (Fedora) |
+| `build_files/facer.sh` | Baut das Modul `facer` (predator-sense) gegen den Image-Kernel: Turbo-Taste und Tastatur-RGB des PT515-51 |
+| `system_files/usr/lib/{modprobe.d,modules-load.d,udev/rules.d}/*facer*`, `*acer-rgb*` | `acer_wmi` blockieren, `facer` laden, RGB-Geräte nur für den angemeldeten Benutzer |
+| `.github/workflows/build.yml` | Baut täglich und bei jedem Push, lädt nach `ghcr.io/witzelfitz/witzelfitz-os` und signiert mit cosign |
+| `cosign.pub`, `system_files/etc/pki/containers/witzelfitz-os.pub` | Öffentlicher Signaturschlüssel. Der private liegt nur als GitHub-Secret `SIGNING_SECRET` vor (Sicherung bei Beni) |
+| `system_files/etc/containers/registries.d/witzelfitz-os.yaml` | Signaturen aus der Registry lesen. Die Regel in `policy.json` setzt `build.sh` |
 
 ## Neu bauen
 
@@ -76,9 +81,21 @@ löscht Windows vollständig.
 
 Nach der Installation einmal im Terminal: `witzelfitz-setup`
 
+## Updates
+
+Das Image wird von GitHub Actions täglich neu gebaut, also mit aktueller Bazzite-Basis, aktuellem Kernel und Nvidia-Treiber, und signiert nach `ghcr.io/witzelfitz/witzelfitz-os:latest` geladen. Ein installiertes System holt die Updates mit `uupd` bzw. `bootc upgrade`.
+
+Einmalige Umstellung eines Systems, das noch auf `localhost/witzelfitz-os` läuft:
+
+```bash
+sudo bootc switch ghcr.io/witzelfitz/witzelfitz-os:latest      # 1. auf GHCR wechseln
+systemctl reboot                                               # bringt policy.json mit dem Schlüssel
+sudo bootc switch --enforce-container-sigpolicy ghcr.io/witzelfitz/witzelfitz-os:latest   # 2. ab jetzt nur signiert
+systemctl reboot
+```
+
+**Secure Boot muss aus bleiben**, solange `facer` unsigniert ist.
+
 ## Offen
 
-- **Updates:** `bootc status` meldet als Quelle `localhost/witzelfitz-os:latest`.
-  Diese Quelle existiert nur auf dem Bau-PC, `bootc upgrade` wird auf dem Laptop
-  daher nichts finden. Aktualisieren heisst vorerst: neues ISO bauen und neu
-  installieren (oder später eine Registry einführen).
+- **Secure Boot:** `facer` ist unsigniert. Für Secure Boot bräuchte es einen eigenen MOK-Schlüssel, mit dem `facer.ko` im Build signiert wird.

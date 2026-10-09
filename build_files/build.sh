@@ -29,5 +29,19 @@ dnf5 install -y \
 # dnf5 -y install <paket>
 # dnf5 -y copr disable <owner>/<repo>
 
+### Acer Predator PT515-51: Turbo-Taste und Tastatur-RGB (Modul facer)
+/ctx/facer.sh
+
+### Signaturpruefung fuer Updates aus ghcr.io/witzelfitz/witzelfitz-os
+# Der oeffentliche Schluessel liegt als cosign.pub im Repo-Wurzelverzeichnis
+# und wird von system_files nach /etc/pki/containers/witzelfitz-os.pub kopiert.
+POLICY=/etc/containers/policy.json
+jq '.transports.docker["ghcr.io/witzelfitz/witzelfitz-os"] = [{
+        "type": "sigstoreSigned",
+        "keyPath": "/etc/pki/containers/witzelfitz-os.pub",
+        "signedIdentity": {"type": "matchRepository"}
+    }]' "$POLICY" >/tmp/policy.json
+install -m 0644 /tmp/policy.json "$POLICY"
+
 ### Dienste
 systemctl enable podman.socket

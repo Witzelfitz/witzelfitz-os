@@ -1,3 +1,4 @@
 output/
 _bib.*/
 build.log
+cosign.key

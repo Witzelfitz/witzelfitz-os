@@ -1,0 +1,3 @@
+docker:
+  ghcr.io/witzelfitz/witzelfitz-os:
+    use-sigstore-attachments: true
