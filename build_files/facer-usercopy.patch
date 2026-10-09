@@ -1,0 +1,39 @@
+--- a/predator-sense-gui/kernel/facer.c
++++ b/predator-sense-gui/kernel/facer.c
+@@ -2698,11 +2698,11 @@
+ 
+ 	if (count != GAMING_KBBL_CONFIG_LEN) {
+ 		pr_err("Invalid data given to gaming keyboard backlight");
+-		return 0;
++		return -EINVAL;
+ 	}
+ 	err = copy_from_user(config_buf, buf, GAMING_KBBL_CONFIG_LEN);
+-	if (err < 0)
+-		pr_err("Copying data from userspace failed with code: %lu\n", err);
++	if (err)
++		return -EFAULT;
+ 
+ 	set_u8_array(config_buf, GAMING_KBBL_CONFIG_LEN, ACER_CAP_GAMINGKB);
+ 	return count;
+@@ -2843,15 +2843,14 @@
+ 	struct led_zone_set_param set_params;
+ 	struct led_zone_set_param_u64 set_params_u64;
+ 	struct acpi_buffer set_input;
+-	err = copy_from_user(config_buf, buf, GAMING_KBBL_STATIC_CONFIG_LEN);
+-
+ 	if (count != GAMING_KBBL_STATIC_CONFIG_LEN) {
+ 		pr_err("Invalid data given to gaming keyboard static backlight");
+-		return 0;
+-	}
+-
+-	if (err < 0)
+-		pr_err("Copying data from userspace failed with code: %lu\n", err);
++		return -EINVAL;
++	}
++
++	err = copy_from_user(config_buf, buf, GAMING_KBBL_STATIC_CONFIG_LEN);
++	if (err)
++		return -EFAULT;
+ 
+ 	if (quirks->four_zone_kb) {
+ 		/*

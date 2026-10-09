@@ -2,3 +2,4 @@ output/
 _bib.*/
 build.log
 cosign.key
+__pycache__/

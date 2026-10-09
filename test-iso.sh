@@ -12,7 +12,12 @@ cd "$(dirname "$(readlink -f "$0")")"
 VM=output/vm
 mkdir -p "$VM"
 
-ISO="$(ls -t output/*.iso 2>/dev/null | head -n1 || true)"
+ISO=""
+for candidate in output/*.iso; do
+    if [ -f "$candidate" ] && { [ -z "$ISO" ] || [ "$candidate" -nt "$ISO" ]; }; then
+        ISO=$candidate
+    fi
+done
 MODE="gui"
 BOOT_ISO=1
 for a in "$@"; do
@@ -39,21 +44,21 @@ VARS_SRC="${CODE/CODE/VARS}"
 [ -f "$VM/vars.fd" ] || cp "$VARS_SRC" "$VM/vars.fd"
 
 ARGS=(
-    -machine q35,accel=kvm -cpu host -smp 4 -m 8G
-    -drive if=pflash,format=raw,readonly=on,file="$CODE"
-    -drive if=pflash,format=raw,file="$VM/vars.fd"
-    -drive if=virtio,format=qcow2,file="$VM/disk.qcow2"
+    -machine "q35,accel=kvm" -cpu host -smp 4 -m 8G
+    -drive "if=pflash,format=raw,readonly=on,file=$CODE"
+    -drive "if=pflash,format=raw,file=$VM/vars.fd"
+    -drive "if=virtio,format=qcow2,file=$VM/disk.qcow2"
     -nic none
     -vga std
     -usb -device usb-tablet
 )
 if [ "$BOOT_ISO" -eq 1 ]; then
     echo "ISO: $ISO"
-    ARGS+=(-drive media=cdrom,readonly=on,file="$ISO" -boot once=d)
+    ARGS+=(-drive "media=cdrom,readonly=on,file=$ISO" -boot once=d)
 fi
 
 if [ "$MODE" = "headless" ]; then
-    ARGS+=(-display none -qmp unix:"$VM/qmp.sock",server=on,wait=off -daemonize -pidfile "$VM/qemu.pid")
+    ARGS+=(-display none -qmp "unix:$VM/qmp.sock,server=on,wait=off" -daemonize -pidfile "$VM/qemu.pid")
     qemu-system-x86_64 "${ARGS[@]}"
     echo "VM laeuft im Hintergrund (PID $(cat "$VM/qemu.pid")), QMP: $VM/qmp.sock"
 else
