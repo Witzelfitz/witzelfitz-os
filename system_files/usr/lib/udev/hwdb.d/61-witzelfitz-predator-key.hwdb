@@ -1,0 +1,5 @@
+# Acer Predator PT515-51: Die Predator-Taste (Scancode f5) meldet sich als
+# "presentation". KDE kennt dafuer keinen Kurzbefehl. Als "battery" loest sie
+# den vorhandenen KDE-Kurzbefehl "Energieprofil wechseln" aus.
+evdev:atkbd:dmi:bvn*:bvr*:bd*:svnAcer*:pnPredatorPT515-51:*
+ KEYBOARD_KEY_f5=battery
