@@ -5,6 +5,15 @@
 
 set -euo pipefail
 
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Bitte als normaler Benutzer ohne sudo ausfuehren." >&2
+    exit 1
+fi
+
+# Auch vor der Installation pruefen: ~/.local/bin ist in dieser Shell
+# beim ersten Start moeglicherweise noch nicht im PATH.
+export PATH="$HOME/.local/bin:$PATH"
+
 MARKER="# >>> witzelfitz-os >>>"
 BASHRC="$HOME/.bashrc"
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
@@ -13,7 +22,12 @@ echo "==> Claude Code (offizieller Installer, aktualisiert sich selbst)"
 if command -v claude >/dev/null 2>&1; then
     echo "    bereits installiert: $(claude --version)"
 else
-    curl -fsSL https://claude.ai/install.sh | bash
+    installer=$(mktemp)
+    trap 'rm -f "$installer"' EXIT
+    curl --proto '=https' --tlsv1.2 -fsSL https://claude.ai/install.sh -o "$installer"
+    bash "$installer"
+    rm -f "$installer"
+    trap - EXIT
 fi
 
 echo "==> tmux-Konfiguration"

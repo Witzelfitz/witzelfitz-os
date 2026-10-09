@@ -5,7 +5,18 @@ Eigenes Linux für den Acer Predator Triton 500 (PT515-51, RTX 2060):
 als Basis, darauf eine dünne eigene Schicht für Terminal-Arbeit und KI-Agenten.
 Ergebnis ist ein Installations-ISO für einen USB-Stick.
 
-## Stand (geprüft am 6.10.2026)
+## Distribution und Autor
+
+Autor und Maintainer: **Witzelfitz**.
+Das öffentliche Distributions-Image liegt in der **GitHub Container Registry**:
+[`ghcr.io/witzelfitz/witzelfitz-os:latest`](https://github.com/users/Witzelfitz/packages/container/package/witzelfitz-os).
+Am 9.10.2026 wurden der anonyme Registry-Zugriff und die cosign-Signatur mit
+`cosign.pub` erfolgreich geprüft. Das ist eine OCI-Registry-Adresse, keine
+eigenständige Projekt-Domain oder formale Registrierung als Linux-Distribution.
+
+Die Ergebnisse der Quellcodeprüfung stehen in [AUDIT.md](AUDIT.md).
+
+## Stand (Image-/VM-Test laut bisheriger Dokumentation vom 6.10.2026)
 
 - Image und ISO bauen durch (`bootc container lint`: bestanden, nur Warnungen aus der Basis).
 - Im Image: alle eigenen Pakete, `witzelfitz-setup`, Nvidia-Treiber 615.71 (`kmod-nvidia`), Steam.
@@ -86,13 +97,34 @@ Nach der Installation einmal im Terminal: `witzelfitz-setup`
 Das Image wird von GitHub Actions täglich neu gebaut, also mit aktueller Bazzite-Basis, aktuellem Kernel und Nvidia-Treiber, und signiert nach `ghcr.io/witzelfitz/witzelfitz-os:latest` geladen. Ein installiertes System holt die Updates mit `uupd` bzw. `bootc upgrade`.
 
 Einmalige Umstellung eines Systems, das noch auf `localhost/witzelfitz-os` läuft:
+Schlüssel und Signaturrichtlinie müssen **vor dem ersten Wechsel** aus einer
+vertrauenswürdig bezogenen Kopie dieses Repositorys installiert werden.
+Im Repository-Verzeichnis ausführen (benötigt `jq`):
 
 ```bash
-sudo bootc switch ghcr.io/witzelfitz/witzelfitz-os:latest      # 1. auf GHCR wechseln
-systemctl reboot                                               # bringt policy.json mit dem Schlüssel
-sudo bootc switch --enforce-container-sigpolicy ghcr.io/witzelfitz/witzelfitz-os:latest   # 2. ab jetzt nur signiert
+# Bei Fehlern abbrechen; niemals ohne erfolgreiche Richtlinieninstallation wechseln.
+(
+set -euo pipefail
+cmp cosign.pub system_files/etc/pki/containers/witzelfitz-os.pub
+sudo install -D -m 0644 cosign.pub /etc/pki/containers/witzelfitz-os.pub
+sudo install -D -m 0644 system_files/etc/containers/registries.d/witzelfitz-os.yaml /etc/containers/registries.d/witzelfitz-os.yaml
+policy=$(mktemp)
+trap 'rm -f "$policy"' EXIT
+sudo jq '.transports.docker["ghcr.io/witzelfitz/witzelfitz-os"] = [{
+  "type": "sigstoreSigned",
+  "keyPath": "/etc/pki/containers/witzelfitz-os.pub",
+  "signedIdentity": {"type": "matchRepository"}
+}]' /etc/containers/policy.json > "$policy"
+sudo install -m 0644 "$policy" /etc/containers/policy.json
+sudo bootc switch --enforce-container-sigpolicy ghcr.io/witzelfitz/witzelfitz-os:latest
+)
+# Nur nach erfolgreichem Wechsel:
 systemctl reboot
 ```
+
+Ein lokales ISO enthält zunächst das Image `localhost/witzelfitz-os:latest`.
+Für Registry-Updates ist dieser Wechsel auch nach einer neuen ISO-Installation
+nötig; das Vorhandensein von `policy.json` allein aktiviert keine signierten Updates.
 
 **Secure Boot muss aus bleiben**, solange `facer` unsigniert ist.
 

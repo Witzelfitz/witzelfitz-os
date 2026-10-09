@@ -10,10 +10,13 @@ $ErrorActionPreference = 'Stop'
 $Distro = 'FedoraLinux-44'
 $Work   = '/root/witzelfitz-os'
 
-$installed = (wsl.exe -l -q) -replace "`0", '' | Where-Object { $_ -eq $Distro }
+$distros = wsl.exe -l -q
+if ($LASTEXITCODE -ne 0) { throw 'WSL-Distributionen konnten nicht abgefragt werden.' }
+$installed = $distros -replace "`0", '' | Where-Object { $_.Trim() -eq $Distro }
 if (-not $installed) {
     Write-Host "==> WSL-Distribution $Distro installieren"
     wsl.exe --install $Distro --no-launch
+    if ($LASTEXITCODE -ne 0) { throw "WSL-Installation fehlgeschlagen: $Distro" }
 }
 
 function In-Wsl([string]$cmd) {
@@ -26,9 +29,20 @@ In-Wsl 'rpm -q podman qemu-system-x86-core qemu-img qemu-ui-gtk edk2-ovmf rsync 
 
 # Repo ins Linux-Dateisystem spiegeln: auf /mnt/c ist der Bau langsam
 # und podman kann dort keine Rechte setzen.
-$WinRepo = (wsl.exe -d $Distro -e wslpath -a ($PSScriptRoot -replace '\\', '/')).Trim()
+$WinRepo = wsl.exe -d $Distro -u root -e wslpath -a $PSScriptRoot.Replace('\', '/')
+if ($LASTEXITCODE -ne 0) { throw 'Repository-Pfad konnte nicht nach WSL uebersetzt werden.' }
+$WinRepo = $WinRepo.Trim()
+
+# POSIX-Shell-Quoting, auch fuer Ordner mit Apostroph, Leerzeichen oder $.
+function Quote-Bash([string]$value) {
+    $quote = [string][char]39
+    $escapedQuote = $quote + [char]34 + $quote + [char]34 + $quote
+    return $quote + $value.Replace($quote, $escapedQuote) + $quote
+}
+$RepoSource = Quote-Bash ($WinRepo + '/')
+$OutputPath = Quote-Bash ($WinRepo + '/output')
 Write-Host "==> Repo nach $Work spiegeln"
-In-Wsl "mkdir -p $Work && rsync -a --delete --exclude output/ --exclude '_bib.*/' --exclude .git/ '$WinRepo/' $Work/"
+In-Wsl "mkdir -p $Work && rsync -a --delete --exclude output/ --exclude '_bib.*/' --exclude .git/ $RepoSource $Work/"
 
 Write-Host '==> ISO bauen (dauert lange)'
 In-Wsl "cd $Work && ./make-iso.sh 2>&1 | tee build.log"
@@ -37,7 +51,7 @@ Write-Host '==> ISO nach Windows kopieren'
 New-Item -ItemType Directory -Force (Join-Path $PSScriptRoot 'output') | Out-Null
 # dd statt cp: cp bricht beim Schreiben grosser Dateien nach /mnt/c
 # unter Speicherdruck mit "Cannot allocate memory" ab.
-In-Wsl "cd $Work/output && for f in *.iso; do dd if=`$f of='$WinRepo/output/'`$f bs=16M status=none; done && cp -f *.sha256 ../build.log '$WinRepo/output/' && cd '$WinRepo/output' && sha256sum -c *.sha256"
+In-Wsl "cd $Work/output; for f in *.iso; do dd if=`"`$f`" of=$OutputPath/`"`$f`" bs=16M status=none; done; cp -f *.sha256 ../build.log $OutputPath/; cd $OutputPath; sha256sum -c *.sha256"
 Get-ChildItem (Join-Path $PSScriptRoot 'output')
 
 if ($Test) {

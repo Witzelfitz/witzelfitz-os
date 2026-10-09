@@ -19,7 +19,8 @@ dnf5 install -y \
     git-delta \
     direnv \
     btop \
-    neovim
+    neovim \
+    patch
 
 ### Eigene Erweiterungen kommen hier hin, z.B.:
 # dnf5 install -y <paket>
