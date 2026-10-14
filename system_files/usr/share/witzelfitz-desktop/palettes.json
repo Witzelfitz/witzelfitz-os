@@ -1,0 +1,184 @@
+[
+  {
+    "id": "amethyst",
+    "name": "Amethyst Night",
+    "accent": "#b3a2ef",
+    "surface": "#141c2e",
+    "alternate": "#1b2439",
+    "keyboard": [
+      "#69529b",
+      "#987acb",
+      "#b3a2ef",
+      "#858fc5"
+    ]
+  },
+  {
+    "id": "ocean",
+    "name": "Ocean Blue",
+    "accent": "#75cde6",
+    "surface": "#10232b",
+    "alternate": "#18303a",
+    "keyboard": [
+      "#266980",
+      "#429db7",
+      "#75cde6",
+      "#4aa9bc"
+    ]
+  },
+  {
+    "id": "sakura",
+    "name": "Sakura Bloom",
+    "accent": "#eaa0c7",
+    "surface": "#281b2b",
+    "alternate": "#36263a",
+    "keyboard": [
+      "#8c4d78",
+      "#bf77a2",
+      "#eaa0c7",
+      "#ad81c7"
+    ]
+  },
+  {
+    "id": "amber",
+    "name": "Amber Lantern",
+    "accent": "#eda664",
+    "surface": "#292018",
+    "alternate": "#382e23",
+    "keyboard": [
+      "#8d5329",
+      "#c67f40",
+      "#eda664",
+      "#d2a766"
+    ]
+  },
+  {
+    "id": "jade",
+    "name": "Jade Temple",
+    "accent": "#80d8bb",
+    "surface": "#102722",
+    "alternate": "#18372f",
+    "keyboard": [
+      "#27745d",
+      "#48a68d",
+      "#80d8bb",
+      "#6bb5a7"
+    ]
+  },
+  {
+    "id": "crimson",
+    "name": "Crimson Empress",
+    "accent": "#e78592",
+    "surface": "#291821",
+    "alternate": "#3b202c",
+    "keyboard": [
+      "#802e4d",
+      "#b34c68",
+      "#e78592",
+      "#b95875"
+    ]
+  },
+  {
+    "id": "cobalt",
+    "name": "Cobalt City",
+    "accent": "#8ea9ee",
+    "surface": "#121f31",
+    "alternate": "#1c2f48",
+    "keyboard": [
+      "#3b5b9d",
+      "#617fc0",
+      "#8ea9ee",
+      "#729bc1"
+    ]
+  },
+  {
+    "id": "moonstone",
+    "name": "Moonstone Silver",
+    "accent": "#c3cde8",
+    "surface": "#1d222d",
+    "alternate": "#2a303d",
+    "keyboard": [
+      "#66768d",
+      "#99adc7",
+      "#c3cde8",
+      "#9ea3bd"
+    ]
+  },
+  {
+    "id": "sunset",
+    "name": "Golden Sunset",
+    "accent": "#edbb86",
+    "surface": "#281e20",
+    "alternate": "#372b2c",
+    "keyboard": [
+      "#995e59",
+      "#c9907a",
+      "#edbb86",
+      "#df9f9b"
+    ]
+  },
+  {
+    "id": "royal",
+    "name": "Royal Violet",
+    "accent": "#b89be6",
+    "surface": "#20182e",
+    "alternate": "#30233e",
+    "keyboard": [
+      "#614381",
+      "#8960ba",
+      "#b89be6",
+      "#9a7acb"
+    ]
+  },
+  {
+    "id": "rosewood",
+    "name": "Rosewood Castle",
+    "accent": "#e4a4ad",
+    "surface": "#2c1e25",
+    "alternate": "#3d2b35",
+    "keyboard": [
+      "#955567",
+      "#bc7889",
+      "#e4a4ad",
+      "#c48ba7"
+    ]
+  },
+  {
+    "id": "mint",
+    "name": "Mint Garden",
+    "accent": "#9cdbc1",
+    "surface": "#142623",
+    "alternate": "#213730",
+    "keyboard": [
+      "#397565",
+      "#6cb09a",
+      "#9cdbc1",
+      "#7bbec0"
+    ]
+  },
+  {
+    "id": "champagne",
+    "name": "Champagne Noir",
+    "accent": "#d6c3a1",
+    "surface": "#24231e",
+    "alternate": "#333128",
+    "keyboard": [
+      "#7c724e",
+      "#ada075",
+      "#d6c3a1",
+      "#b6a995"
+    ]
+  },
+  {
+    "id": "moonlit",
+    "name": "Moonlit Lavender",
+    "accent": "#c3b0ed",
+    "surface": "#1d1d30",
+    "alternate": "#2c2a43",
+    "keyboard": [
+      "#645d92",
+      "#9186bc",
+      "#c3b0ed",
+      "#a3afdc"
+    ]
+  }
+]

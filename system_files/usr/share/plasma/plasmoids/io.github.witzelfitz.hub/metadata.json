@@ -1,0 +1,10 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "KPlugin": {
+    "Id": "io.github.witzelfitz.hub", "Name": "Witzelfitz Hub",
+    "Description": "Games, Workspace, Orte, Sound, System und Anime-Atmosphäre",
+    "Icon": "applications-games", "Category": "Application Launchers",
+    "Version": "1.2.0", "License": "MIT", "Authors": [{"Name": "Witzelfitz"}]
+  }
+}

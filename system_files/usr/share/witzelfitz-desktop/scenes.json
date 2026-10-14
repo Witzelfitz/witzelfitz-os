@@ -1,0 +1,32 @@
+[
+  {
+    "id": "aurora",
+    "name": "Aurora",
+    "character": "Aurora",
+    "series": "WITZEL OS",
+    "file": "aurora.png",
+    "accent": "#b3a2ef",
+    "effect": "fireflies",
+    "palette": "moonlit"
+  },
+  {
+    "id": "ocean",
+    "name": "Ocean",
+    "character": "Ocean",
+    "series": "WITZEL OS",
+    "file": "ocean.png",
+    "accent": "#80d8bb",
+    "effect": "ocean",
+    "palette": "jade"
+  },
+  {
+    "id": "ember",
+    "name": "Ember",
+    "character": "Ember",
+    "series": "WITZEL OS",
+    "file": "ember.png",
+    "accent": "#f1b879",
+    "effect": "none",
+    "palette": "sunset"
+  }
+]

@@ -1,0 +1,453 @@
+#!/usr/bin/python3
+"""Native scene manager for the Witzelfitz Plasma desktop."""
+import argparse
+import json
+import os
+from pathlib import Path
+import sys
+import uuid
+
+DATA = Path(__file__).resolve().parents[1] / "share/witzelfitz-desktop"
+HOME = Path.home()
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config"))
+SHARE = Path(os.environ.get("XDG_DATA_HOME", HOME / ".local/share"))
+sys.path.insert(0, str(DATA))
+from library import EFFECTS, SceneLibrary
+from palettes import load_palettes, palette_for_scene, mix, readable_ink
+
+from PySide6.QtCore import QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import QColor, QIcon, QImageReader, QPainter, QPixmap
+from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog, QComboBox,
+    QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QListWidgetItem, QMainWindow, QMessageBox, QPushButton, QScrollArea,
+    QSlider, QSplitter, QVBoxLayout, QWidget)
+
+
+def session_action(action, parameter=""):
+    import dbus
+    proxy = dbus.SessionBus().get_object("io.github.witzelfitz.Desktop", "/io/github/witzelfitz/Desktop")
+    error = str(proxy.Action(action, parameter, dbus_interface="io.github.witzelfitz.Desktop", timeout=5))
+    if error:
+        raise ValueError(error)
+
+
+def snapshot():
+    import dbus
+    try:
+        proxy = dbus.SessionBus().get_object("io.github.witzelfitz.Desktop", "/io/github/witzelfitz/Desktop")
+        return json.loads(str(proxy.Get("io.github.witzelfitz.Desktop", "Snapshot",
+            dbus_interface="org.freedesktop.DBus.Properties", timeout=3)))
+    except (dbus.DBusException, ValueError):
+        return {"theme": "aurora", "motion": True, "pauseOnBattery": True}
+
+
+def import_image(library, filename):
+    source = Path(filename)
+    if not source.is_file() or source.stat().st_size > 64 * 1024 * 1024:
+        raise ValueError("Bitte ein Bild bis 64 MB auswählen.")
+    reader = QImageReader(str(source))
+    reader.setAutoTransform(True)
+    if bytes(reader.format()).lower() not in (b"png", b"jpeg", b"jpg", b"webp"):
+        raise ValueError("Unterstützt werden PNG, JPEG und WebP.")
+    size = reader.size()
+    if not size.isValid() or size.width() * size.height() > 64_000_000:
+        raise ValueError("Das Bild ist ungültig oder grösser als 64 Megapixel.")
+    image = reader.read()
+    if image.isNull():
+        raise ValueError("Das Bild konnte nicht gelesen werden.")
+    if max(image.width(), image.height()) > 3840:
+        image = image.scaled(3840, 3840, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    ident = "user-" + uuid.uuid4().hex
+    library.wallpapers.mkdir(parents=True, exist_ok=True)
+    path = library.wallpapers / (ident + ".png")
+    if not image.save(str(path), "PNG"):
+        raise ValueError("Das Bild konnte nicht gespeichert werden.")
+    scene = {"id": ident, "file": path.name, "name": source.stem[:100] or "Mein Design",
+             "character": "Eigenes Design", "series": "MEINE SZENEN",
+             "accent": "#b3a2ef", "effect": "none"}
+    try:
+        library.save(scene)
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+    return ident
+
+
+def palette_icon(profile):
+    pixmap = QPixmap(72, 22); pixmap.fill(QColor(profile["surface"]))
+    painter = QPainter(pixmap)
+    for index, color in enumerate(profile["keyboard"]):
+        painter.fillRect(3 + index * 17, 4, 14, 14, QColor(color))
+    painter.end()
+    return QIcon(pixmap)
+
+
+class SceneManager(QMainWindow):
+    def __init__(self, library=None, initial_state=None):
+        super().__init__()
+        self.library = library or SceneLibrary(DATA, CONFIG, SHARE)
+        self.state = initial_state if initial_state is not None else snapshot()
+        self.current = None
+        self.loading = False
+        self.previews = []
+        self.presets = load_palettes(DATA)
+        self.current_palette = ""
+        self.keyboard_override = False
+        self.keyboard_colors = []
+        self.setWindowTitle("Witzelfitz · Szenenstudio")
+        self.resize(1320, 960)
+        self.setMinimumSize(850, 680)
+        self.setWindowIcon(QIcon.fromTheme("preferences-desktop-wallpaper"))
+        self.base_style = """
+            QMainWindow, QWidget#studio { background: #111827; color: #edf0f9; }
+            QLabel { color: #edf0f9; }
+            QListWidget { color: #edf0f9; background: #151e30; border: 1px solid #334158; border-radius: 12px; padding: 6px; }
+            QListWidget::item { padding: 8px; border-radius: 8px; }
+            QListWidget::item:selected { background: #35405c; color: #ffffff; }
+            QLineEdit, QComboBox { background: #1c263b; color: #edf0f9; border: 1px solid #46516a; border-radius: 6px; padding: 7px; }
+            QPushButton { background: #26334b; color: #edf0f9; border: 1px solid #52617c; border-radius: 8px; padding: 9px 14px; }
+            QPushButton:hover { background: #354562; }
+            QPushButton:disabled { color: #748099; }
+            QPushButton#activate { background: #7866a7; font-weight: bold; }
+            QCheckBox { color: #edf0f9; spacing: 8px; }
+            QScrollArea { border: none; background: transparent; }
+            QComboBox QAbstractItemView { color: #edf0f9; background: #1c263b; selection-background-color: #354562; }
+            QScrollBar:vertical { background: #111827; width: 10px; }
+            QScrollBar::handle:vertical { background: #46516a; border-radius: 4px; min-height: 28px; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        """
+        self.setStyleSheet(self.base_style)
+        base = QWidget(); base.setObjectName("studio"); self.setCentralWidget(base)
+        outer = QVBoxLayout(base); outer.setContentsMargins(24, 20, 24, 16); outer.setSpacing(14)
+        heading = QLabel("Deine Szenen. Deine Atmosphäre."); heading.setStyleSheet("font-size: 24px; font-weight: 600;")
+        outer.addWidget(heading)
+        caption = QLabel("Wähle ein Motiv und eine Palette. «Auf Desktop aktivieren» übernimmt Bild, Farben und gekoppelte Tastaturzonen.")
+        caption.setStyleSheet("color: #aab6cc;"); outer.addWidget(caption)
+        splitter = QSplitter(); outer.addWidget(splitter, 1)
+        sidebar = QWidget(); sidebar_layout = QVBoxLayout(sidebar); sidebar_layout.setContentsMargins(0, 0, 14, 0)
+        self.search = QLineEdit(); self.search.setPlaceholderText("Szenen suchen …"); self.search.setAccessibleName("Szenen suchen")
+        self.search.textChanged.connect(self.filter_scenes); sidebar_layout.addWidget(self.search)
+        self.list = QListWidget(); self.list.setIconSize(QSize(110, 62)); self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff); self.list.setWordWrap(True)
+        self.list.setAccessibleName("Szenenbibliothek"); self.list.currentItemChanged.connect(self.selection_changed)
+        sidebar_layout.addWidget(self.list, 1)
+        add = QPushButton("＋ Eigenes Bild importieren"); add.clicked.connect(self.import_dialog); sidebar_layout.addWidget(add)
+        splitter.addWidget(sidebar)
+        detail_scroll = QScrollArea(); detail_scroll.setWidgetResizable(True)
+        detail = QWidget(); detail.setObjectName("studio"); details = QVBoxLayout(detail); details.setContentsMargins(8, 0, 0, 0); details.setSpacing(14)
+        detail_scroll.setWidget(detail); splitter.addWidget(detail_scroll); splitter.setSizes([310, 880])
+        self.preview = QLabel(); self.preview.setAlignment(Qt.AlignCenter); self.preview.setMinimumHeight(180)
+        self.preview.setMaximumHeight(240); self.preview.setAccessibleName("Hintergrundvorschau")
+        details.addWidget(self.preview)
+        self.info = QLabel(); self.info.setWordWrap(True); self.info.setStyleSheet("color: #b6c1d6;"); details.addWidget(self.info)
+        form = QFormLayout(); form.setSpacing(10)
+        self.name = QLineEdit(); self.character = QLineEdit(); self.series = QLineEdit()
+        self.palette = QComboBox(); self.palette.addItem("Individuell", "")
+        self.palette.setIconSize(QSize(72, 22))
+        for profile in self.presets: self.palette.addItem(palette_icon(profile), profile["name"], profile["id"])
+        self.palette.currentIndexChanged.connect(self.palette_changed)
+        self.color = "#b3a2ef"; self.color_button = QPushButton(); self.color_button.clicked.connect(self.pick_color)
+        keyboard = QWidget(); zones = QHBoxLayout(keyboard); zones.setContentsMargins(0, 0, 0, 0)
+        self.zone_buttons = []
+        for zone in range(4):
+            button = QPushButton(f"Zone {zone + 1}")
+            button.setAccessibleName(f"Farbe von Tastaturzone {zone + 1}")
+            button.clicked.connect(lambda checked=False, index=zone: self.pick_zone(index))
+            zones.addWidget(button); self.zone_buttons.append(button)
+        self.effect = QComboBox()
+        for key, label in EFFECTS.items(): self.effect.addItem(label, key)
+        self.effect.currentIndexChanged.connect(self.update_preview)
+        self.visible = QCheckBox("Im Desktop-Hub anzeigen")
+        for label, widget in [("Designname", self.name), ("Charakter / Motiv", self.character), ("Serie / Sammlung", self.series),
+                              ("Farbpalette", self.palette), ("Akzentfarbe", self.color_button), ("Tastaturzonen", keyboard),
+                              ("Animation", self.effect), ("Sichtbarkeit", self.visible)]:
+            form.addRow(label, widget)
+        details.addLayout(form)
+        controls = QHBoxLayout()
+        self.save_button = QPushButton("Änderungen speichern"); self.save_button.clicked.connect(self.save_scene)
+        live = QPushButton("Live-Vorschau"); live.clicked.connect(self.live_preview)
+        activate = QPushButton("Auf Desktop aktivieren"); activate.setObjectName("activate"); activate.clicked.connect(self.activate_scene)
+        controls.addWidget(self.save_button); controls.addWidget(live); controls.addWidget(activate)
+        details.addLayout(controls)
+        self.remove_button = QPushButton(); self.remove_button.clicked.connect(self.reset_or_remove); details.addWidget(self.remove_button, 0, Qt.AlignLeft)
+        details.addStretch()
+        settings = QHBoxLayout()
+        self.motion = QCheckBox("Animation einschalten"); self.motion.setChecked(bool(self.state.get("motion", True)))
+        self.battery = QCheckBox("Auf Akku pausieren"); self.battery.setChecked(bool(self.state.get("pauseOnBattery", True)))
+        self.motion.toggled.connect(lambda checked: self.setting("motion", checked))
+        self.battery.toggled.connect(lambda checked: self.setting("pauseOnBattery", checked))
+        settings.addWidget(self.motion); settings.addWidget(self.battery); settings.addStretch(); outer.addLayout(settings)
+        self.sync_keyboard = QCheckBox("Tastatur mit Szene koppeln"); self.sync_keyboard.setChecked(bool(self.state.get("syncKeyboard", True)))
+        self.sync_colors = QCheckBox("KDE-Farben mit Szene koppeln"); self.sync_colors.setChecked(bool(self.state.get("syncColors", True)))
+        self.sync_keyboard.toggled.connect(lambda checked: self.setting("syncKeyboard", checked))
+        self.sync_colors.toggled.connect(lambda checked: self.setting("syncColors", checked))
+        settings.insertWidget(2, self.sync_keyboard); settings.insertWidget(3, self.sync_colors)
+        brightness_row = QHBoxLayout(); brightness_row.addWidget(QLabel("Tastatur-Helligkeit"))
+        self.brightness = QSlider(Qt.Horizontal); self.brightness.setRange(0, 100)
+        self.brightness.setAccessibleName("Tastatur-Helligkeit in Prozent")
+        self.brightness.setValue(int(self.state.get("keyboardBrightness", 65)))
+        self.brightness_label = QLabel(str(self.brightness.value()) + "%")
+        self.brightness.valueChanged.connect(lambda value: self.brightness_label.setText(str(value) + "%"))
+        self.brightness.sliderReleased.connect(self.save_brightness)
+        self.brightness.actionTriggered.connect(lambda _: QTimer.singleShot(0, self.save_brightness) if not self.brightness.isSliderDown() else None)
+        brightness_row.addWidget(self.brightness, 1); brightness_row.addWidget(self.brightness_label)
+        self.hardware = QLabel(); brightness_row.addWidget(self.hardware)
+        outer.addLayout(brightness_row)
+        self.status = QLabel("Eigene Designs und Änderungen bleiben bei OS-Updates erhalten.")
+        self.status.setWordWrap(True); self.status.setStyleSheet("color: #aab6cc;"); outer.addWidget(self.status)
+        self.refresh(self.state.get("theme"))
+        self.sync_timer = QTimer(self); self.sync_timer.setInterval(2000)
+        self.sync_timer.timeout.connect(self.sync_state); self.sync_timer.start()
+
+    def notify(self, message, error=False):
+        self.status.setText(message)
+        self.status.setStyleSheet("color: #ffb6be;" if error else "color: #a8d8bf;")
+
+    def call(self, action, parameter=""):
+        try:
+            session_action(action, parameter)
+            return True
+        except Exception as exc:
+            self.notify(f"Desktop-Dienst: {exc}", True)
+            return False
+
+    def refresh(self, selected=None):
+        self.list.blockSignals(True); self.list.clear()
+        selected_item = None
+        for scene in self.library.catalog(True):
+            label = f'{scene["character"]}\n{scene["name"]}' + ("\nAusgeblendet" if scene["hidden"] else "")
+            item = QListWidgetItem(QIcon(QPixmap(QUrl(scene["image"]).toLocalFile()).scaled(110, 62, Qt.KeepAspectRatio, Qt.SmoothTransformation)), label)
+            item.setData(Qt.UserRole, scene); item.setSizeHint(QSize(265, 88)); self.list.addItem(item)
+            if scene["id"] == selected: selected_item = item
+        self.list.blockSignals(False)
+        self.loading = True
+        self.list.setCurrentItem(selected_item or self.list.item(0))
+        self.loading = False
+        self.filter_scenes(self.search.text())
+
+    def draft(self):
+        if not self.current: return None
+        scene = dict(self.current, name=self.name.text().strip(), character=self.character.text().strip(),
+                     series=self.series.text().strip(), accent=self.color, effect=self.effect.currentData(),
+                     keyboardCustom=self.keyboard_override)
+        if self.current_palette: scene["palette"] = self.current_palette
+        else: scene.pop("palette", None)
+        if self.keyboard_override: scene["keyboard"] = list(self.keyboard_colors)
+        else: scene.pop("keyboard", None)
+        return scene
+
+    def dirty(self):
+        if not self.current: return False
+        draft = self.draft()
+        return (any(draft[key] != self.current[key] for key in ("name", "character", "series", "accent", "effect"))
+                or draft.get("palette", "") != self.current.get("palette", "")
+                or self.keyboard_override != self.current.get("keyboardCustom", False)
+                or (self.keyboard_override and self.keyboard_colors != self.current["keyboard"])
+                or self.visible.isChecked() == self.current["hidden"])
+
+    def allow_discard(self):
+        if not self.dirty(): return True
+        answer = QMessageBox.question(self, "Ungespeicherte Änderungen", "Änderungen verwerfen?",
+            QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
+        return answer == QMessageBox.Discard
+
+    def selection_changed(self, item, previous):
+        if not self.loading and previous and not self.allow_discard():
+            self.list.blockSignals(True); self.list.setCurrentItem(previous); self.list.blockSignals(False); return
+        if not item: return
+        self.current = item.data(Qt.UserRole)
+        self.current_palette = self.current.get("palette", "")
+        self.palette.blockSignals(True); self.palette.setCurrentIndex(max(0, self.palette.findData(self.current_palette))); self.palette.blockSignals(False)
+        self.keyboard_override = bool(self.current.get("keyboardCustom", False))
+        self.keyboard_colors = list(self.current["keyboard"])
+        self.name.setText(self.current["name"]); self.character.setText(self.current["character"]); self.series.setText(self.current["series"])
+        self.set_color(self.current["accent"])
+        self.effect.setCurrentIndex(self.effect.findData(self.current["effect"]))
+        self.visible.setChecked(not self.current["hidden"])
+        self.remove_button.setText("Eigenes Design entfernen …" if self.current["custom"] else "Originaldesign wiederherstellen")
+        self.update_preview()
+
+    def filter_scenes(self, text):
+        for index in range(self.list.count()):
+            item = self.list.item(index); scene = item.data(Qt.UserRole)
+            item.setHidden(text.casefold() not in (item.text() + " " + scene["series"]).casefold())
+
+    def set_color(self, value):
+        self.color = value
+        self.color_button.setText(value)
+        self.color_button.setStyleSheet(f"border: 2px solid {value};")
+        if self.current: self.update_palette_preview()
+
+    def pick_color(self):
+        color = QColorDialog.getColor(QColor(self.color), self, "Akzentfarbe wählen")
+        if color.isValid():
+            self.current_palette = ""
+            self.palette.blockSignals(True); self.palette.setCurrentIndex(0); self.palette.blockSignals(False)
+            self.set_color(color.name())
+
+    def palette_changed(self, *_):
+        if not self.current: return
+        self.current_palette = self.palette.currentData()
+        profile = next((value for value in self.presets if value["id"] == self.current_palette), None)
+        if profile:
+            self.keyboard_override = False
+            self.keyboard_colors = list(profile["keyboard"])
+            self.set_color(profile["accent"])
+        else:
+            self.update_palette_preview()
+
+    def pick_zone(self, index):
+        color = QColorDialog.getColor(QColor(self.keyboard_colors[index]), self, f"Tastaturzone {index + 1}")
+        if color.isValid():
+            self.keyboard_override = True
+            self.keyboard_colors[index] = color.name()
+            self.update_palette_preview()
+
+    def update_palette_preview(self):
+        profile = palette_for_scene(self.draft(), DATA)
+        if not self.keyboard_override: self.keyboard_colors = list(profile["keyboard"])
+        style = self.base_style.replace("#111827", profile["surface"]).replace("#151e30", profile["surface"]).replace("#1c263b", profile["alternate"]).replace("#26334b", profile["alternate"])
+        style = style.replace("#7866a7", mix(profile["accent"], profile["surface"], 0.55))
+        style = style.replace("#35405c", mix(profile["accent"], profile["surface"], 0.72)).replace("#354562", profile["alternate"])
+        self.setStyleSheet(style)
+        for index, button in enumerate(self.zone_buttons):
+            color = self.keyboard_colors[index]
+            ink = readable_ink(color)
+            button.setText(f"Zone {index + 1}\n{color}")
+            button.setStyleSheet(f"background: {color}; color: {ink}; border: 1px solid {color};")
+
+    def update_preview(self, *_):
+        if not self.current: return
+        pixmap = QPixmap(QUrl(self.current["image"]).toLocalFile())
+        self.preview.setPixmap(pixmap.scaled(max(300, self.preview.width()), 240, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        active = " · Auf dem Desktop aktiv" if self.current["id"] == self.state.get("theme") else ""
+        self.info.setText(self.current["series"] + active + "\nEffekt: " + self.effect.currentText())
+        self.hardware.setText("RGB · 4 Zonen" if self.state.get("rgb") else "RGB · nicht verfügbar")
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "preview"): self.update_preview()
+
+    def save_scene(self, *_):
+        if not self.current: return False
+        try:
+            ident = self.current["id"]
+            self.library.save(self.draft(), hidden=not self.visible.isChecked())
+            reloaded = self.call("reload")
+            self.state = snapshot()
+            self.refresh(ident)
+            if reloaded: self.notify("Design gespeichert. Die Desktop-Auswahl ist aktualisiert.")
+            return True
+        except (OSError, ValueError) as exc:
+            self.notify(str(exc), True)
+            return False
+
+    def activate_scene(self):
+        if self.current is None: return
+        if not self.visible.isChecked():
+            self.notify("Zum Aktivieren zuerst «Im Desktop-Hub anzeigen» einschalten.", True); return
+        if self.dirty() and not self.save_scene(): return
+        if self.call("theme", self.current["id"]):
+            self.state = snapshot(); self.update_preview()
+            error = self.state.get("appearanceError", "")
+            self.notify(error or self.current["name"] + " ist jetzt auf deinem Desktop aktiv.", bool(error))
+
+    def live_preview(self):
+        if self.current is None: return
+        from PySide6.QtQuick import QQuickView
+        view = QQuickView(); view.setResizeMode(QQuickView.SizeRootObjectToView)
+        view.setInitialProperties({"imageSource": QUrl(self.current["image"]), "accent": QColor(self.color),
+            "effect": self.effect.currentData(), "animate": self.motion.isChecked() and not
+            (snapshot().get("onBattery", False) and self.battery.isChecked())})
+        view.setSource(QUrl.fromLocalFile(str(DATA / "qml/Scene.qml")))
+        if view.status() == QQuickView.Error:
+            self.notify("Vorschau konnte nicht geladen werden: " + "; ".join(error.toString() for error in view.errors()), True)
+            return
+        view.setTitle(self.name.text() + " · Vorschau")
+        view.resize(1280, 720); view.show(); self.previews.append(view)
+
+    def import_dialog(self):
+        if not self.allow_discard(): return
+        filename, _ = QFileDialog.getOpenFileName(self, "Hintergrundbild importieren", str(HOME / "Bilder"), "Bilder (*.png *.jpg *.jpeg *.webp)")
+        if filename: self.import_file(filename)
+
+    def import_file(self, filename):
+        try:
+            ident = import_image(self.library, filename)
+            reloaded = self.call("reload"); self.refresh(ident)
+            if reloaded: self.notify("Bild importiert. Name, Farbe und Animation kannst du jetzt anpassen.")
+            return ident
+        except (OSError, ValueError) as exc:
+            self.notify(str(exc), True)
+            return None
+
+    def reset_or_remove(self):
+        if not self.current: return
+        if self.current["custom"]:
+            answer = QMessageBox.question(self, "Eigenes Design entfernen", "Dieses importierte Design entfernen? Die ursprüngliche Bilddatei bleibt erhalten.",
+                QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if answer != QMessageBox.Yes: return
+        try:
+            ident = self.current["id"]; self.library.reset_or_remove(ident)
+            self.call("reload"); self.state = snapshot(); self.refresh(ident)
+            self.notify("Design entfernt bzw. auf das Original zurückgesetzt.")
+        except (OSError, ValueError) as exc:
+            self.notify(str(exc), True)
+
+    def setting(self, name, checked):
+        if self.call(name, "true" if checked else "false"):
+            self.state[name] = checked; self.notify("Einstellung gespeichert.")
+        else:
+            widget = {"motion": self.motion, "pauseOnBattery": self.battery, "syncKeyboard": self.sync_keyboard, "syncColors": self.sync_colors}[name]
+            widget.blockSignals(True); widget.setChecked(not checked); widget.blockSignals(False)
+
+    def save_brightness(self):
+        value = self.brightness.value()
+        if value != self.state.get("keyboardBrightness", 65):
+            if self.call("keyboardBrightness", str(value)):
+                self.state["keyboardBrightness"] = value; self.notify("Tastatur-Helligkeit gespeichert.")
+            else:
+                self.brightness.setValue(int(self.state.get("keyboardBrightness", 65)))
+
+    def sync_state(self):
+        if not self.isVisible() or self.brightness.isSliderDown(): return
+        state = snapshot()
+        if state == self.state: return
+        self.state = state
+        for name, widget in [("motion", self.motion), ("pauseOnBattery", self.battery),
+                             ("syncKeyboard", self.sync_keyboard), ("syncColors", self.sync_colors)]:
+            widget.blockSignals(True); widget.setChecked(bool(state.get(name, True))); widget.blockSignals(False)
+        self.brightness.setValue(int(state.get("keyboardBrightness", 65)))
+        self.update_preview()
+        if state.get("appearanceError"):
+            self.notify(state["appearanceError"], True)
+
+    def closeEvent(self, event):
+        if self.allow_discard():
+            for view in self.previews: view.close()
+            event.accept()
+        else: event.ignore()
+
+
+def main():
+    system = Path("/usr/bin/witzelfitz-scenes")
+    if Path(__file__).resolve().parent == (HOME / ".local/bin").resolve() and system.is_file():
+        os.execv(str(system), [str(system), *sys.argv[1:]])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--screenshot", type=Path)
+    parser.add_argument("--select")
+    args = parser.parse_args()
+    app = QApplication(sys.argv); app.setApplicationName("Witzelfitz Szenenstudio"); app.setDesktopFileName("io.github.witzelfitz.Scenes")
+    window = SceneManager()
+    if args.select: window.refresh(args.select)
+    window.show()
+    if args.screenshot:
+        def capture():
+            args.screenshot.parent.mkdir(parents=True, exist_ok=True)
+            ok = window.grab().save(str(args.screenshot))
+            app.exit(0 if ok else 1)
+        QTimer.singleShot(1000, capture)
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

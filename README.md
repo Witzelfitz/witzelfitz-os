@@ -92,39 +92,126 @@ löscht Windows vollständig.
 
 Nach der Installation einmal im Terminal: `witzelfitz-setup`
 
+## Witzelfitz-Desktop
+
+Öffentliche Images und ISOs enthalten drei eigene abstrakte Hintergründe:
+**Aurora**, **Ocean** und **Ember**. `build_files/public-assets.py` erzeugt sie
+beim Build ohne zusätzliche Bibliotheken. GitHub Actions und der ISO-Bau prüfen
+den Katalog, die Bildinhalte und das Fehlen zusätzlicher Bilder.
+
+Private Motive und Vorschauen sind sowohl in Git als auch im Container-Build
+ausgeschlossen. Deine bisherige Sammlung liegt separat unter
+`~/.local/share/witzelfitz-desktop-private/` und wird vom Desktop automatisch
+eingelesen. Die gewählte Szene und persönliche Anpassungen bleiben erhalten.
+Weitere private Pakete lassen sich mit
+`python3 tools/install-private-pack.py /pfad/zum/paket` installieren; ein Paket
+enthält `scenes.json` und `wallpapers/`. Details: [Bilder und Builds](docs/assets.md).
+
+Das Image enthält den **Witzelfitz Hub** als natives Plasma-6-Widget und
+**Anime Atmosphere** als Wallpaper-Plugin. Beim ersten KDE-Login richtet
+`witzelfitz-desktop apply --if-unconfigured` das Profil ein. Eine Sicherung
+des bisherigen Layouts und der Farbeinstellungen liegt unter
+`~/.local/state/witzelfitz-desktop/`. Weitere Logins überschreiben das
+persönliche Layout nicht.
+
+- Drei öffentliche Designs; zusätzliche private Szenen erscheinen im selben Hub.
+- Sechs Bereiche: Games, Workspace, Orte, Sound, System und Atmosphäre.
+- Szenenwechsel, Animation, Akku-Pause und vorhandene Acer-RGB-Geräte
+  werden unter **Atmosphäre** gesteuert.
+- Effekte laufen mit etwa 29 FPS und pausieren standardmässig auf Akku,
+  bei maximierten/Vollbildfenstern und bei Bildschirmsperre. Der Hintergrund
+  verwendet den Desktop-Renderer; keine laufende Nvidia-Abfrage.
+- Dateien auf dem Desktop werden ausgeblendet und bleiben im Desktop-Ordner
+  erhalten; der Hub öffnet ihn über **Orte → Desktop-Dateien**.
+
+### Eigene Designs verwalten
+
+Das OS-Image enthält zusätzlich die [Bootanimation Witzel OS](docs/boot.md)
+mit dem eigenen Aurora-Motiv. Theme-Dateien und Skriptmodul werden im
+Initramfs geprüft; die Darstellung auf dem Laptop ist nach dem ersten
+Start des neuen Images noch abzunehmen.
+
+**Atmosphäre → Szenen verwalten …** öffnet das native **Witzelfitz
+Szenenstudio**. Du findest es auch im Anwendungsmenü oder startest es mit
+`witzelfitz-scenes`.
+
+- Vorschaubilder, Suche und Live-Vorschau, ohne die aktive Szene zu wechseln.
+- Designname, Charakter, Sammlung, Akzentfarbe und Animation bearbeiten.
+- 14 abgestimmte Paletten für Karten, KDE-Fenster und vier Tastaturzonen.
+- Farben jeder Tastaturzone individuell wählen und Helligkeit von 0 bis 100 % regeln.
+- Tastatur und KDE-Farben unabhängig mit der Szene koppeln oder entkoppeln.
+- Eigene PNG-, JPEG- und WebP-Bilder importieren; das Original bleibt erhalten.
+- Einzelne Szenen im Hub ausblenden, Originaldesigns zurücksetzen oder eigene
+  importierte Designs entfernen. Mindestens eine Szene bleibt sichtbar.
+- Animation und Akku-Pause ändern.
+
+**Änderungen speichern** übernimmt Anpassungen; **Auf Desktop aktivieren**
+wechselt die Szene. Eigene Bilder werden bis maximal 3840 Pixel Kantenlänge
+als PNG-Kopie gespeichert. Benutzeranpassungen liegen in
+`~/.config/witzelfitz/scenes.json`, eigene Bilder unter
+`~/.local/share/witzelfitz-desktop-custom/wallpapers/`. Beide bleiben bei
+OS-Updates und `install-user` erhalten. Neue Szenen sind sofort im Hub verfügbar.
+
+Die Szene bringt eine empfohlene Palette mit, jede andere Palette ist ebenfalls
+wählbar. **Jade Temple**, **Crimson Empress**, **Ocean Blue**, **Sakura Bloom**,
+**Amber Lantern**, **Champagne Noir**, **Mint Garden**, **Royal Violet**,
+**Cobalt City**, **Moonstone Silver**, **Golden Sunset**, **Rosewood Castle**,
+**Moonlit Lavender** und **Amethyst Night** sind enthalten. Änderungen an einer
+aktiven Szene werden beim Speichern übernommen; **Auf Desktop aktivieren**
+wechselt auch das Bild. Tastatur- und KDE-Kopplung sind standardmässig aktiv,
+die Tastatur-Helligkeit beginnt bei 65 %. Die beiden Kopplungsschalter lassen
+manuelle Farben bestehen. Farbschemata stehen zusätzlich in KDEs normaler
+Farbverwaltung zur Auswahl.
+
+Zur vorherigen Oberfläche zurück:
+
+```bash
+witzelfitz-desktop restore
+```
+
+Erneut aktivieren: `witzelfitz-desktop apply`. Die Wiederherstellung startet
+Plasmashell neu; offene Anwendungen bleiben bestehen. Die ursprüngliche
+Sicherung bleibt auch nach erneutem Anwenden der Rückkehrpunkt.
+
+Für eine bestehende Installation ohne neues System-Image:
+
+```bash
+python3 system_files/usr/bin/witzelfitz-desktop install-user
+~/.local/bin/witzelfitz-desktop apply
+```
+
+Diese Installation kopiert dieselben Pakete ins Benutzerprofil. Sobald die
+OS-Version unter `/usr/bin/witzelfitz-desktop` vorhanden ist, übernimmt sie
+die Steuerung und aktualisiert die verwalteten lokalen Kopien beim Login.
+Persönliche Einstellungen bleiben dabei erhalten.
+
+Architektur, Tests und Grenzen: [docs/desktop.md](docs/desktop.md).
+
 ## Updates
 
 Das Image wird von GitHub Actions täglich neu gebaut, also mit aktueller Bazzite-Basis, aktuellem Kernel und Nvidia-Treiber, und signiert nach `ghcr.io/witzelfitz/witzelfitz-os:latest` geladen. Ein installiertes System holt die Updates mit `uupd` bzw. `bootc upgrade`.
 
-Einmalige Umstellung eines Systems, das noch auf `localhost/witzelfitz-os` läuft:
-Schlüssel und Signaturrichtlinie müssen **vor dem ersten Wechsel** aus einer
-vertrauenswürdig bezogenen Kopie dieses Repositorys installiert werden.
-Im Repository-Verzeichnis ausführen (benötigt `jq`):
+Einmalige Umstellung eines Systems, das noch auf `localhost/witzelfitz-os`
+oder einem lokalen OCI-Export läuft: im aktuellen Repository ausführen:
 
 ```bash
-# Bei Fehlern abbrechen; niemals ohne erfolgreiche Richtlinieninstallation wechseln.
-(
-set -euo pipefail
-cmp cosign.pub system_files/etc/pki/containers/witzelfitz-os.pub
-sudo install -D -m 0644 cosign.pub /etc/pki/containers/witzelfitz-os.pub
-sudo install -D -m 0644 system_files/etc/containers/registries.d/witzelfitz-os.yaml /etc/containers/registries.d/witzelfitz-os.yaml
-policy=$(mktemp)
-trap 'rm -f "$policy"' EXIT
-sudo jq '.transports.docker["ghcr.io/witzelfitz/witzelfitz-os"] = [{
-  "type": "sigstoreSigned",
-  "keyPath": "/etc/pki/containers/witzelfitz-os.pub",
-  "signedIdentity": {"type": "matchRepository"}
-}]' /etc/containers/policy.json > "$policy"
-sudo install -m 0644 "$policy" /etc/containers/policy.json
-sudo bootc switch --enforce-container-sigpolicy ghcr.io/witzelfitz/witzelfitz-os:latest
-)
-# Nur nach erfolgreichem Wechsel:
+sudo ./tools/use-signed-updates.sh
+# Erst nach erfolgreichem Bereitstellen und zu einem passenden Zeitpunkt:
 systemctl reboot
 ```
 
-Ein lokales ISO enthält zunächst das Image `localhost/witzelfitz-os:latest`.
-Für Registry-Updates ist dieser Wechsel auch nach einer neuen ISO-Installation
-nötig; das Vorhandensein von `policy.json` allein aktiviert keine signierten Updates.
+Das Werkzeug prüft die Signatur des veröffentlichten Digests, installiert die
+Signaturrichtlinie, pinnt das laufende System als Rückkehrpunkt und stellt
+`latest` mit erzwungener Signaturprüfung bereit. Ein bereits vorgemerktes
+Deployment wird nicht ersetzt. Es startet den Laptop nicht selbst neu.
+Das Repository und sein öffentlicher Schlüssel müssen vertrauenswürdig bezogen sein.
+
+Die CI lädt zunächst einen eindeutigen Kandidaten hoch, signiert und prüft ihn,
+und setzt erst danach die öffentlichen Update-Tags; `latest` folgt zuletzt.
+Ein lokales ISO oder OCI-Test-Image folgt bis zur Umstellung weiter seiner
+lokalen Quelle. Der laufende `uupd.timer` allein ändert diese Quelle nicht.
+
+NVIDIA-/Standby-Abnahme und Vergleich mit dem Basisimage: [docs/nvidia.md](docs/nvidia.md).
 
 **Secure Boot muss aus bleiben**, solange `facer` unsigniert ist.
 

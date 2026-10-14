@@ -1,0 +1,10 @@
+{
+  "KPackageStructure": "Plasma/Wallpaper",
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "KPlugin": {
+    "Id": "io.github.witzelfitz.anime", "Name": "Witzelfitz Anime Atmosphere",
+    "Description": "14 Anime- und Fantasy-Szenen mit abgestimmten Farbpaletten und Tastatur-RGB",
+    "Icon": "preferences-desktop-wallpaper", "Version": "1.2.0",
+    "License": "MIT", "Authors": [{"Name": "Witzelfitz"}]
+  }
+}

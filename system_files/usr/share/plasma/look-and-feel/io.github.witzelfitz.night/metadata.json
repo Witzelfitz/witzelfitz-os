@@ -1,0 +1,6 @@
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {"Id":"io.github.witzelfitz.night", "Name":"Witzelfitz Night",
+    "Description":"Anime Atmosphere und nativer Desktop-Hub", "Version":"1.0.0",
+    "License":"MIT", "Authors":[{"Name":"Witzelfitz"}]}
+}

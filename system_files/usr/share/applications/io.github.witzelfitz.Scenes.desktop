@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Witzelfitz Szenenstudio
+Comment=Anime-Hintergründe verwalten, anpassen und importieren
+Exec=witzelfitz-scenes
+Icon=preferences-desktop-wallpaper
+Categories=Settings;DesktopSettings;
+Keywords=Anime;Wallpaper;Hintergrund;Szenen;
+StartupNotify=true

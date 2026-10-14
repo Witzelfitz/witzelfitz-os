@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Witzelfitz Desktop
+Comment=Anime-Hub beim ersten KDE-Login einrichten
+Exec=/usr/bin/witzelfitz-desktop apply --if-unconfigured
+OnlyShowIn=KDE;
+X-KDE-autostart-phase=2
+NoDisplay=true

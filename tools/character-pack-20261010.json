@@ -1,0 +1,178 @@
+[
+  {
+    "id": "chie",
+    "character": "Chie Satonaka",
+    "series": "PERSONA 4 GOLDEN",
+    "name": "Inaba After Rain",
+    "palette": "jade",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Chie Satonaka reimagined as an adult woman in her mid-twenties, short warm brown bob and brown eyes, green zip-up track jacket with yellow accents over an opaque white shirt, cheerful confident expression. Quiet Inaba shopping street after rain, distant muted golden street lamps and green reflections."
+  },
+  {
+    "id": "yukiko",
+    "character": "Yukiko Amagi",
+    "series": "PERSONA 4 GOLDEN",
+    "name": "Amagi Lanterns",
+    "palette": "crimson",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Yukiko Amagi reimagined as an adult woman in her mid-twenties, long straight black hair, red headband, elegant red cardigan over a fully closed white blouse, gentle composed smile. Japanese Amagi Inn wooden veranda and evening garden, red maple leaves, lantern reflections in a dark pond."
+  },
+  {
+    "id": "rise",
+    "character": "Rise Kujikawa",
+    "series": "PERSONA 4 GOLDEN",
+    "name": "Encore at Dusk",
+    "palette": "sakura",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Rise Kujikawa reimagined as an adult woman in her mid-twenties, long auburn hair in twin ponytails and brown eyes, modest burgundy blazer over a high-neck cream blouse, friendly expressive smile. Quiet backstage lounge overlooking a nighttime city, restrained pink and warm gold lights."
+  },
+  {
+    "id": "naoto",
+    "character": "Naoto Shirogane",
+    "series": "PERSONA 4 GOLDEN",
+    "name": "Midnight Detective",
+    "palette": "cobalt",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Naoto Shirogane reimagined as an adult woman in her mid-twenties, short dark blue hair, blue eyes, navy detective cap, masculine tailored dark blue jacket, fully closed shirt and tie, serious perceptive expression. Rainy Inaba railway platform at night, blue fog and dim gold station lights, cinematic detective atmosphere."
+  },
+  {
+    "id": "marie",
+    "character": "Marie",
+    "series": "PERSONA 4 GOLDEN",
+    "name": "Velvet Poetry",
+    "palette": "amethyst",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Marie from Persona 4 Golden reimagined as a clearly adult woman, short black hair, blue military-style cap, blue vest over opaque white blouse and dark red tie, small headphones around her neck. Holding a closed poetry notebook, thoughtful expression. Dreamlike Velvet Room doorway overlooking misty Inaba, blue and violet light."
+  },
+  {
+    "id": "margaret",
+    "character": "Margaret",
+    "series": "PERSONA 4 GOLDEN",
+    "name": "Velvet Elegance",
+    "palette": "moonstone",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Margaret from Persona 4 Golden, adult woman with long wavy platinum-blonde hair and golden eyes, elegant fully closed navy velvet attendant coat with matching gloves and a blue hairband, poised calm expression, holding a closed compendium. Deep blue Velvet Room with soft golden lamps and restrained silver reflections."
+  },
+  {
+    "id": "ann",
+    "character": "Ann Takamaki",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Shibuya After Hours",
+    "palette": "crimson",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Ann Takamaki reimagined as an adult woman in her mid-twenties, long blonde hair in twin ponytails, vivid blue eyes, modest fully clothed red streetwear jacket over an opaque black high-neck top, confident relaxed smile. Shibuya rooftop at rainy blue hour, dark red and blue reflections and distant city signs rendered as abstract lights without text."
+  },
+  {
+    "id": "makoto",
+    "character": "Makoto Niijima",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Queen of the Night",
+    "palette": "cobalt",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Makoto Niijima reimagined as an adult woman in her mid-twenties, short dark brown bob with braided hairband and red-brown eyes, black tailored riding jacket with protective shoulder details, dark gloves and high collar, composed determined expression. Beside a stationary dark motorcycle under a city overpass, deep navy rain, blue-silver reflections."
+  },
+  {
+    "id": "futaba",
+    "character": "Futaba Sakura",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Oracle Terminal",
+    "palette": "jade",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Futaba Sakura reimagined as an adult woman in her mid-twenties, long orange hair with bangs, round black glasses, headphones, fully clothed dark green utility jacket over an opaque black shirt, focused friendly expression. Seated at a cozy computer desk, soft green and amber screen glow, dim books and cables, all displays abstract shapes without readable text."
+  },
+  {
+    "id": "haru",
+    "character": "Haru Okumura",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Rooftop Tea Garden",
+    "palette": "rosewood",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Haru Okumura reimagined as an adult woman in her mid-twenties, fluffy chin-length light brown curly hair, gentle brown eyes, elegant high-neck plum blouse and cream garden coat, fully clothed, holding a porcelain teacup, warm smile. Quiet Tokyo rooftop rose garden at twilight, soft burgundy, rose and golden city light."
+  },
+  {
+    "id": "kasumi",
+    "character": "Kasumi Yoshizawa",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Violet Curtain",
+    "palette": "royal",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Kasumi Yoshizawa from Persona 5 Royal reimagined as an adult woman in her mid-twenties, long red hair tied in a ponytail with black ribbon, brown-red eyes, elegant fully covered black performance coat over high-neck charcoal blouse, red gloves, dignified confident pose. Velvet theater corridor at night, violet light, red curtains and soft gold lamps. No revealing leotard."
+  },
+  {
+    "id": "sae",
+    "character": "Sae Niijima",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Silver Verdict",
+    "palette": "moonstone",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Sae Niijima from Persona 5, adult woman, long straight silver hair, dark eyes, elegant black tailored business jacket over an opaque dark turtleneck, serious poised expression. Modern office high above nighttime Tokyo, cool silver-blue glass reflections and warm distant city lights."
+  },
+  {
+    "id": "takemi",
+    "character": "Tae Takemi",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Midnight Clinic",
+    "palette": "amethyst",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Tae Takemi from Persona 5, adult woman with dark blue chin-length bob, red-brown eyes, subtle black choker, fully clothed white doctor's coat over an opaque black high-neck dress, composed slightly amused expression. Quiet small Tokyo clinic at blue hour, violet window light, dark teal cabinetry and soft white desk lamp."
+  },
+  {
+    "id": "kawakami",
+    "character": "Sadayo Kawakami",
+    "series": "PERSONA 5 ROYAL",
+    "name": "Coffee Between Chapters",
+    "palette": "champagne",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Sadayo Kawakami from Persona 5, adult woman with short wavy dark brown bob, warm brown eyes, casual cream cardigan over an opaque fully closed white blouse, gentle tired but content smile. Seated reading at a quiet cafe window at rainy evening, dark wood, warm coffee-brown and champagne-gold lights. Regular casual clothing."
+  },
+  {
+    "id": "yuna-ffx",
+    "character": "Yuna · FFX",
+    "series": "FINAL FANTASY X",
+    "name": "Summoner’s Moon",
+    "palette": "cobalt",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Yuna from Final Fantasy X, tasteful adult reinterpretation of the original summoner design, short brown hair, one green and one blue eye, distinctive blue beaded side braid, fully clothed white kimono sleeves, modest closed white upper garment and purple floral skirt with yellow obi. Holding the elegant summoner staff upright, calm resolute expression. Moonlit Besaid temple steps with distant blue ocean and soft pyreflies."
+  },
+  {
+    "id": "rikku",
+    "character": "Rikku",
+    "series": "FINAL FANTASY X",
+    "name": "Al Bhed Twilight",
+    "palette": "amber",
+    "prompt": "Create a beautiful landscape 16:9 anime desktop wallpaper. Place the character on the rightmost 40 percent; keep the left 55 percent dark and low-detail for desktop widgets. Refined hand-painted cel shading, soft cinematic lighting, friendly adventure illustration, everyday fully clothed costume. No text, logos, interface, watermarks or collage. Rikku from Final Fantasy X as an adult Al Bhed engineer, long blonde hair, green eyes, goggles on her head. She wears practical orange mechanic overalls over a cream long-sleeved shirt and work gloves. Friendly smile while holding a small brass mechanism. Quiet desert airship hangar at dusk with warm orange and teal lamps."
+  },
+  {
+    "id": "paine",
+    "character": "Paine",
+    "series": "FINAL FANTASY X-2",
+    "name": "Crimson Gullwing",
+    "palette": "crimson",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Paine from Final Fantasy X-2, adult woman with short spiky silver hair and red eyes, fully clothed black high-collared armored travel outfit with subtle red belts and metal accents, composed serious expression. Quiet airship deck over Spira at night, deep burgundy clouds, silver moonlight and distant pyreflies."
+  },
+  {
+    "id": "garnet",
+    "character": "Garnet / Dagger",
+    "series": "FINAL FANTASY IX",
+    "name": "Alexandria Moonrise",
+    "palette": "amber",
+    "prompt": "Use case: stylized-concept. Asset type: polished 16:9 landscape anime desktop wallpaper, ideally 2560x1440. Composition: waist-up character occupies rightmost 40 percent, clear face in upper right; left 55 percent is deliberately dark, quiet, low-detail negative space reserved for desktop widgets. Premium hand-painted anime illustration, refined cinematic cel shading, dignified everyday or adventure portrait, fully clothed and nonsexual. No text, letters, logos, watermark, UI, borders or collage. Subject and setting: Garnet Til Alexandros XVII, Dagger from Final Fantasy IX, reimagined as an adult queen in her mid-twenties, long straight dark brown-black hair, brown eyes, orange high-neck adventure vest over a long-sleeved opaque white blouse, crystal pendant and modest gloves, serene determined expression. Alexandria castle balcony at night, warm orange lanterns and blue mist over gothic spires."
+  },
+  {
+    "id": "freya",
+    "character": "Freya Crescent",
+    "series": "FINAL FANTASY IX",
+    "name": "Rain over Burmecia",
+    "palette": "crimson",
+    "prompt": "Create a beautiful landscape 16:9 anime desktop wallpaper. Place the character on the rightmost 40 percent; keep the left 55 percent dark and low-detail for desktop widgets. Refined hand-painted cel shading, soft cinematic lighting, friendly adventure illustration, everyday fully clothed costume. No text, logos, interface, watermarks or collage. Freya Crescent from Final Fantasy IX, adult anthropomorphic female Burmecian rat dragoon, clearly elongated pale rat muzzle, pink nose, long pointed ears and white hair, distinctive wide-brimmed red dragoon hat and red armored coat with high collar, fully clothed, dignified expression, tall ornate spear upright beside her. Rainy gothic Burmecia terraces, dark red and slate-blue atmosphere. Keep her clearly non-human rat face and narrow muzzle."
+  },
+  {
+    "id": "eiko",
+    "character": "Eiko Carol",
+    "series": "FINAL FANTASY IX",
+    "name": "Madain Sari Starlight",
+    "palette": "moonlit",
+    "prompt": "Create a beautiful landscape 16:9 anime desktop wallpaper. Place the character on the rightmost 40 percent; keep the left 55 percent dark and low-detail for desktop widgets. Refined hand-painted cel shading, soft cinematic lighting, friendly adventure illustration, everyday fully clothed costume. No text, logos, interface, watermarks or collage. Eiko Carol from Final Fantasy IX, a cheerful small child summoner with short lavender-blue hair and one small horn on her forehead. She wears a long-sleeved cream tunic, lavender trousers and a purple traveling cloak. A friendly little white moogle accompanies her. Wholesome children's storybook scene in Madain Sari stone ruins with softly glowing flowers and violet twilight. Sweet innocent expression and natural child proportions."
+  },
+  {
+    "id": "tenten",
+    "character": "Tenten",
+    "series": "NARUTO · BORUTO",
+    "name": "Scrolls under Lanterns",
+    "palette": "rosewood",
+    "prompt": "Create a beautiful landscape 16:9 anime desktop wallpaper. Place the character on the rightmost 40 percent; keep the left 55 percent dark and low-detail for desktop widgets. Refined hand-painted cel shading, soft cinematic lighting, friendly adventure illustration, everyday fully clothed costume. No text, logos, interface, watermarks or collage. Tenten from Naruto as her clearly adult Boruto-era self, brown hair in two round buns, brown eyes, fully clothed cream Chinese-style high-neck tunic with burgundy trim and long sleeves, fingerless gloves, warm confident smile. Holding a closed equipment scroll in a quiet Konoha weapon shop garden, red wooden frames and warm lanterns at dusk."
+  },
+  {
+    "id": "ino",
+    "character": "Ino Yamanaka",
+    "series": "NARUTO · BORUTO",
+    "name": "Yamanaka Night Garden",
+    "palette": "royal",
+    "prompt": "Create a beautiful landscape 16:9 anime desktop wallpaper. Place the character on the rightmost 40 percent; keep the left 55 percent dark and low-detail for desktop widgets. Refined hand-painted cel shading, soft cinematic lighting, friendly adventure illustration, everyday fully clothed costume. No text, logos, interface, watermarks or collage. Ino Yamanaka from Naruto as her clearly adult Boruto-era self, long blonde hair in a high ponytail with distinctive side fringe, blue eyes, fully clothed modest purple high-neck sleeveless tunic with a dark jacket, friendly confident smile, holding a small bouquet. Quiet Yamanaka flower shop veranda at blue hour, purple irises and pale flowers, violet and soft warm lantern light."
+  }
+]

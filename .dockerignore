@@ -1,0 +1,11 @@
+**/__pycache__/
+**/*.pyc
+.git/
+output/
+_bib.*/
+system_files/usr/share/witzelfitz-desktop/wallpapers/
+system_files/usr/share/plymouth/themes/witzelfitz/background.png
+docs/desktop/*.png
+docs/desktop/*.jpg
+docs/desktop/*.jpeg
+docs/desktop/*.webp

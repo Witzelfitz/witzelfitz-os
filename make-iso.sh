@@ -7,7 +7,7 @@ set -euo pipefail
 
 IMAGE="localhost/witzelfitz-os:latest"
 BIB="quay.io/centos-bootc/bootc-image-builder:latest"
-PKGS="tmux fzf ripgrep fd-find bat zoxide git-delta direnv btop neovim"
+PKGS="patch tmux fzf ripgrep fd-find bat zoxide git-delta direnv btop neovim python3-dbus python3-gobject python3-pyside6"
 
 cd "$(dirname "$(readlink -f "$0")")"
 
@@ -23,6 +23,13 @@ echo "==> 2/4 Image pruefen"
 # shellcheck disable=SC2086
 podman run --rm "$IMAGE" rpm -q $PKGS
 podman run --rm "$IMAGE" test -x /usr/bin/witzelfitz-setup
+podman run --rm "$IMAGE" test -x /usr/bin/witzelfitz-desktop
+podman run --rm "$IMAGE" test -x /usr/bin/witzelfitz-scenes
+podman run --rm "$IMAGE" python3 /usr/bin/witzelfitz-desktop validate
+podman run --rm --network=none -v "$PWD/build_files/public-assets.py:/check-public-assets.py:ro,z" \
+    "$IMAGE" python3 /check-public-assets.py --root / --check
+podman run --rm -e QT_QPA_PLATFORM=offscreen "$IMAGE" python3 /usr/bin/witzelfitz-scenes --screenshot /tmp/scenes.png
+podman run --rm -v "$PWD/tools/check-boot-image.sh:/check-boot-image.sh:ro,z" "$IMAGE" bash /check-boot-image.sh
 podman run --rm "$IMAGE" sh -c 'test -f /usr/lib/modules/*/extra/facer/facer.ko'
 
 echo "==> 3/4 ISO bauen"
