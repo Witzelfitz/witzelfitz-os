@@ -77,8 +77,17 @@ jobs:
         run: |
           set -euo pipefail
           sudo podman run --rm "${IMAGE_NAME}:latest" \
-            rpm -q tmux fzf ripgrep fd-find bat zoxide git-delta direnv btop neovim
+            rpm -q tmux fzf ripgrep fd-find bat zoxide git-delta direnv btop neovim python3-dbus python3-gobject python3-pyside6
           sudo podman run --rm "${IMAGE_NAME}:latest" test -x /usr/bin/witzelfitz-setup
+          sudo podman run --rm "${IMAGE_NAME}:latest" test -x /usr/bin/witzelfitz-desktop
+          sudo podman run --rm "${IMAGE_NAME}:latest" test -x /usr/bin/witzelfitz-scenes
+          sudo podman run --rm "${IMAGE_NAME}:latest" python3 /usr/bin/witzelfitz-desktop validate
+          sudo podman run --rm --network=none \
+            -v "$PWD/build_files/public-assets.py:/check-public-assets.py:ro,z" \
+            "${IMAGE_NAME}:latest" python3 /check-public-assets.py --root / --check
+          sudo podman run --rm -e QT_QPA_PLATFORM=offscreen "${IMAGE_NAME}:latest" python3 /usr/bin/witzelfitz-scenes --screenshot /tmp/scenes.png
+          sudo podman run --rm -v "$PWD/tools/check-boot-image.sh:/check-boot-image.sh:ro,z" \
+            "${IMAGE_NAME}:latest" bash /check-boot-image.sh
           sudo podman run --rm "${IMAGE_NAME}:latest" \
             sh -c 'test -f /usr/lib/modules/*/extra/facer/facer.ko'
           sudo podman run --rm "${IMAGE_NAME}:latest" \

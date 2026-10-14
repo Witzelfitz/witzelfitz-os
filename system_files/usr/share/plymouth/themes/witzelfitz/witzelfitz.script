@@ -1,0 +1,136 @@
+# Bootanimation Witzel OS
+# Grafiken erzeugt tools/make-plymouth-theme.py; Positionen müssen dazu passen.
+
+screen_w = Window.GetWidth();
+screen_h = Window.GetHeight();
+screen_x = Window.GetX();
+screen_y = Window.GetY();
+s = screen_h / 1080;
+
+Window.SetBackgroundTopColor(0.02, 0.02, 0.05);
+Window.SetBackgroundBottomColor(0.02, 0.02, 0.05);
+
+# Hintergrund füllt den Bildschirm, Seitenverhältnis bleibt erhalten
+bg_image = Image("background.png");
+bg_scale = Math.Max(screen_w / bg_image.GetWidth(), screen_h / bg_image.GetHeight());
+bg_w = Math.Int(bg_image.GetWidth() * bg_scale);
+bg_h = Math.Int(bg_image.GetHeight() * bg_scale);
+bg = Sprite(bg_image.Scale(bg_w, bg_h));
+bg.SetPosition(screen_x + (screen_w - bg_w) / 2, screen_y + (screen_h - bg_h) / 2, -100);
+
+# Schriftzug mit Schein
+title_image = Image("title.png");
+title_image = title_image.Scale(title_image.GetWidth() * s, title_image.GetHeight() * s);
+glow_image = Image("glow.png");
+glow_image = glow_image.Scale(glow_image.GetWidth() * s, glow_image.GetHeight() * s);
+title_x = screen_x + screen_w * 0.075 - 60 * s;
+title_y = screen_y + screen_h * 0.40 - 60 * s;
+glow = Sprite(glow_image);
+glow.SetPosition(title_x, title_y, 10);
+glow.SetOpacity(0);
+title = Sprite(title_image);
+title.SetPosition(title_x, title_y, 11);
+title.SetOpacity(0);
+
+# Drei Punkte als Ladeanzeige
+dot_image = Image("dot.png");
+dot_image = dot_image.Scale(dot_image.GetWidth() * s, dot_image.GetHeight() * s);
+for (i = 0; i < 3; i++) {
+    dots[i] = Sprite(dot_image);
+    dots[i].SetPosition(screen_x + screen_w * 0.075 - 14 * s + i * 26 * s,
+                        title_y + title_image.GetHeight() - 30 * s, 12);
+    dots[i].SetOpacity(0);
+}
+
+# Regen
+drop_image = Image("drop.png");
+drop_image = drop_image.Scale(drop_image.GetWidth() * s, drop_image.GetHeight() * s);
+rain_count = 36;
+for (i = 0; i < rain_count; i++) {
+    rain[i].sprite = Sprite(drop_image);
+    rain[i].x = Math.Random() * screen_w;
+    rain[i].y = Math.Random() * screen_h;
+    rain[i].speed = (18 + Math.Random() * 14) * s;
+    rain[i].sprite.SetOpacity(0.15 + Math.Random() * 0.35);
+    rain[i].sprite.SetZ(5);
+}
+
+t = 0;
+dots_visible = 1;
+fun refresh_callback() {
+    global.t += 1 / 50;
+
+    for (i = 0; i < global.rain_count; i++) {
+        global.rain[i].y += global.rain[i].speed;
+        global.rain[i].x -= global.rain[i].speed * 0.08;
+        if (global.rain[i].y > global.screen_h) {
+            global.rain[i].y = -80 * global.s;
+            global.rain[i].x = Math.Random() * global.screen_w;
+        }
+        global.rain[i].sprite.SetX(global.screen_x + global.rain[i].x);
+        global.rain[i].sprite.SetY(global.screen_y + global.rain[i].y);
+    }
+
+    reveal = Math.Min(1, global.t / 1.1);
+    ease = 1 - (1 - reveal) * (1 - reveal) * (1 - reveal);
+    offset = 24 * global.s * (1 - ease);
+    global.title.SetY(global.title_y + offset);
+    global.title.SetOpacity(ease);
+    global.glow.SetY(global.title_y + offset);
+    global.glow.SetOpacity((0.35 + 0.25 * Math.Sin(global.t * 2.4)) * ease);
+
+    for (i = 0; i < 3; i++) {
+        pulse = Math.Max(0, Math.Sin(global.t * 4 - i * 0.9));
+        global.dots[i].SetOpacity((0.25 + 0.75 * pulse) * ease * global.dots_visible);
+    }
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+# Passwort- und Fragefenster (z. B. für verschlüsselte Laufwerke)
+prompt_y = title_y + title_image.GetHeight() + 30 * s;
+
+fun clear_prompt() {
+    global.prompt_sprite.SetOpacity(0);
+    global.answer_sprite.SetOpacity(0);
+}
+
+fun show_prompt(prompt, answer) {
+    global.dots_visible = 0;
+    global.prompt_sprite = Sprite(Image.Text(prompt, 0.95, 0.94, 1, 1, "Sans 14"));
+    global.prompt_sprite.SetPosition(global.screen_x + global.screen_w * 0.075, global.prompt_y, 20);
+    global.answer_sprite = Sprite(Image.Text(answer, 0.70, 0.64, 0.94, 1, "Sans 18"));
+    global.answer_sprite.SetPosition(global.screen_x + global.screen_w * 0.075, global.prompt_y + 36 * global.s, 20);
+}
+
+fun password_callback(prompt, bullets) {
+    stars = "";
+    for (i = 0; i < bullets; i++) {
+        stars += "•";
+    }
+    if (prompt == "") {
+        prompt = "Passwort";
+    }
+    show_prompt(prompt, stars);
+}
+Plymouth.SetDisplayPasswordFunction(password_callback);
+
+fun question_callback(prompt, entry) {
+    show_prompt(prompt, entry);
+}
+Plymouth.SetDisplayQuestionFunction(question_callback);
+
+fun normal_callback() {
+    global.dots_visible = 1;
+    if (global.prompt_sprite) {
+        clear_prompt();
+    }
+}
+Plymouth.SetDisplayNormalFunction(normal_callback);
+
+# Meldungen unten links
+fun message_callback(text) {
+    global.message_sprite = Sprite(Image.Text(text, 0.80, 0.78, 0.90, 1, "Sans 11"));
+    global.message_sprite.SetPosition(global.screen_x + global.screen_w * 0.075,
+                                      global.screen_y + global.screen_h - 60 * global.s, 20);
+}
+Plymouth.SetMessageFunction(message_callback);

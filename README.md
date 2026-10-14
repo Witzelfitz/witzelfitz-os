@@ -92,6 +92,101 @@ löscht Windows vollständig.
 
 Nach der Installation einmal im Terminal: `witzelfitz-setup`
 
+## Witzelfitz-Desktop
+
+Öffentliche Images und ISOs enthalten drei eigene abstrakte Hintergründe:
+**Aurora**, **Ocean** und **Ember**. `build_files/public-assets.py` erzeugt sie
+beim Build ohne zusätzliche Bibliotheken. GitHub Actions und der ISO-Bau prüfen
+den Katalog, die Bildinhalte und das Fehlen zusätzlicher Bilder.
+
+Private Motive und Vorschauen sind sowohl in Git als auch im Container-Build
+ausgeschlossen. Deine bisherige Sammlung liegt separat unter
+`~/.local/share/witzelfitz-desktop-private/` und wird vom Desktop automatisch
+eingelesen. Die gewählte Szene und persönliche Anpassungen bleiben erhalten.
+Weitere private Pakete lassen sich mit
+`python3 tools/install-private-pack.py /pfad/zum/paket` installieren; ein Paket
+enthält `scenes.json` und `wallpapers/`. Details: [Bilder und Builds](docs/assets.md).
+
+Das Image enthält den **Witzelfitz Hub** als natives Plasma-6-Widget und
+**Anime Atmosphere** als Wallpaper-Plugin. Beim ersten KDE-Login richtet
+`witzelfitz-desktop apply --if-unconfigured` das Profil ein. Eine Sicherung
+des bisherigen Layouts und der Farbeinstellungen liegt unter
+`~/.local/state/witzelfitz-desktop/`. Weitere Logins überschreiben das
+persönliche Layout nicht.
+
+- Drei öffentliche Designs; zusätzliche private Szenen erscheinen im selben Hub.
+- Sechs Bereiche: Games, Workspace, Orte, Sound, System und Atmosphäre.
+- Szenenwechsel, Animation, Akku-Pause und vorhandene Acer-RGB-Geräte
+  werden unter **Atmosphäre** gesteuert.
+- Effekte laufen mit etwa 29 FPS und pausieren standardmässig auf Akku,
+  bei maximierten/Vollbildfenstern und bei Bildschirmsperre. Der Hintergrund
+  verwendet den Desktop-Renderer; keine laufende Nvidia-Abfrage.
+- Dateien auf dem Desktop werden ausgeblendet und bleiben im Desktop-Ordner
+  erhalten; der Hub öffnet ihn über **Orte → Desktop-Dateien**.
+
+### Eigene Designs verwalten
+
+Das OS-Image enthält zusätzlich die [Bootanimation Witzel OS](docs/boot.md)
+mit dem eigenen Aurora-Motiv. Theme-Dateien und Skriptmodul werden im
+Initramfs geprüft; die Darstellung auf dem Laptop ist nach dem ersten
+Start des neuen Images noch abzunehmen.
+
+**Atmosphäre → Szenen verwalten …** öffnet das native **Witzelfitz
+Szenenstudio**. Du findest es auch im Anwendungsmenü oder startest es mit
+`witzelfitz-scenes`.
+
+- Vorschaubilder, Suche und Live-Vorschau, ohne die aktive Szene zu wechseln.
+- Designname, Charakter, Sammlung, Akzentfarbe und Animation bearbeiten.
+- 14 abgestimmte Paletten für Karten, KDE-Fenster und vier Tastaturzonen.
+- Farben jeder Tastaturzone individuell wählen und Helligkeit von 0 bis 100 % regeln.
+- Tastatur und KDE-Farben unabhängig mit der Szene koppeln oder entkoppeln.
+- Eigene PNG-, JPEG- und WebP-Bilder importieren; das Original bleibt erhalten.
+- Einzelne Szenen im Hub ausblenden, Originaldesigns zurücksetzen oder eigene
+  importierte Designs entfernen. Mindestens eine Szene bleibt sichtbar.
+- Animation und Akku-Pause ändern.
+
+**Änderungen speichern** übernimmt Anpassungen; **Auf Desktop aktivieren**
+wechselt die Szene. Eigene Bilder werden bis maximal 3840 Pixel Kantenlänge
+als PNG-Kopie gespeichert. Benutzeranpassungen liegen in
+`~/.config/witzelfitz/scenes.json`, eigene Bilder unter
+`~/.local/share/witzelfitz-desktop-custom/wallpapers/`. Beide bleiben bei
+OS-Updates und `install-user` erhalten. Neue Szenen sind sofort im Hub verfügbar.
+
+Die Szene bringt eine empfohlene Palette mit, jede andere Palette ist ebenfalls
+wählbar. **Jade Temple**, **Crimson Empress**, **Ocean Blue**, **Sakura Bloom**,
+**Amber Lantern**, **Champagne Noir**, **Mint Garden**, **Royal Violet**,
+**Cobalt City**, **Moonstone Silver**, **Golden Sunset**, **Rosewood Castle**,
+**Moonlit Lavender** und **Amethyst Night** sind enthalten. Änderungen an einer
+aktiven Szene werden beim Speichern übernommen; **Auf Desktop aktivieren**
+wechselt auch das Bild. Tastatur- und KDE-Kopplung sind standardmässig aktiv,
+die Tastatur-Helligkeit beginnt bei 65 %. Die beiden Kopplungsschalter lassen
+manuelle Farben bestehen. Farbschemata stehen zusätzlich in KDEs normaler
+Farbverwaltung zur Auswahl.
+
+Zur vorherigen Oberfläche zurück:
+
+```bash
+witzelfitz-desktop restore
+```
+
+Erneut aktivieren: `witzelfitz-desktop apply`. Die Wiederherstellung startet
+Plasmashell neu; offene Anwendungen bleiben bestehen. Die ursprüngliche
+Sicherung bleibt auch nach erneutem Anwenden der Rückkehrpunkt.
+
+Für eine bestehende Installation ohne neues System-Image:
+
+```bash
+python3 system_files/usr/bin/witzelfitz-desktop install-user
+~/.local/bin/witzelfitz-desktop apply
+```
+
+Diese Installation kopiert dieselben Pakete ins Benutzerprofil. Sobald die
+OS-Version unter `/usr/bin/witzelfitz-desktop` vorhanden ist, übernimmt sie
+die Steuerung und aktualisiert die verwalteten lokalen Kopien beim Login.
+Persönliche Einstellungen bleiben dabei erhalten.
+
+Architektur, Tests und Grenzen: [docs/desktop.md](docs/desktop.md).
+
 ## Updates
 
 Das Image wird von GitHub Actions täglich neu gebaut, also mit aktueller Bazzite-Basis, aktuellem Kernel und Nvidia-Treiber, und signiert nach `ghcr.io/witzelfitz/witzelfitz-os:latest` geladen. Ein installiertes System holt die Updates mit `uupd` bzw. `bootc upgrade`.

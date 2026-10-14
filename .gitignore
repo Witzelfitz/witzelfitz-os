@@ -2,4 +2,14 @@ output/
 _bib.*/
 build.log
 cosign.key
+
 __pycache__/
+*.pyc
+
+# Private Bildersammlung und Vorschauen: nur lokal, nicht auf GitHub.
+/system_files/usr/share/witzelfitz-desktop/wallpapers/
+/system_files/usr/share/plymouth/themes/witzelfitz/background.png
+/docs/desktop/*.png
+/docs/desktop/*.jpg
+/docs/desktop/*.jpeg
+/docs/desktop/*.webp

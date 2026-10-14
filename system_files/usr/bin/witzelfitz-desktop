@@ -1,0 +1,453 @@
+#!/usr/bin/python3
+"""Native Witzelfitz desktop: session D-Bus service and reversible profile setup."""
+import argparse
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+
+DATA = Path(__file__).resolve().parents[1] / "share/witzelfitz-desktop"
+HOME = Path.home()
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config"))
+STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "witzelfitz-desktop"
+USER_SHARE = Path(os.environ.get("XDG_DATA_HOME", HOME / ".local/share"))
+SETTINGS = CONFIG / "witzelfitz/desktop.json"
+SERVICE = "io.github.witzelfitz.Desktop"
+OBJECT = "/io/github/witzelfitz/Desktop"
+IFACE = SERVICE
+HUB = "io.github.witzelfitz.hub"
+WALLPAPER = "io.github.witzelfitz.anime"
+DEFAULTS = {"theme": "aurora", "motion": True, "pauseOnBattery": True,
+            "syncKeyboard": True, "syncColors": True, "keyboardBrightness": 65}
+
+
+sys.path.insert(0, str(DATA))
+from library import SceneLibrary, atomic_json
+from palettes import load_palettes, keyboard_packets, scheme_text
+from appearance import Appearance
+
+
+def scene_library():
+    return SceneLibrary(DATA, CONFIG, USER_SHARE)
+
+
+def read_settings():
+    result = DEFAULTS.copy()
+    available = [scene["id"] for scene in scenes()]
+    if available and result["theme"] not in available:
+        result["theme"] = available[0]
+    try:
+        value = json.loads(SETTINGS.read_text())
+        if isinstance(value, dict):
+            if value.get("theme") in available:
+                result["theme"] = value["theme"]
+            for key in ("motion", "pauseOnBattery", "syncKeyboard", "syncColors"):
+                if isinstance(value.get(key), bool):
+                    result[key] = value[key]
+            brightness = value.get("keyboardBrightness")
+            if type(brightness) is int and 0 <= brightness <= 100:
+                result["keyboardBrightness"] = brightness
+    except (OSError, ValueError):
+        pass
+    return result
+
+
+def scenes():
+    return scene_library().catalog()
+
+def launch(argv):
+    """No shell, no user-supplied executable or command interpolation."""
+    if not shutil.which(argv[0]):
+        raise ValueError(f"{argv[0]} ist nicht installiert.")
+    subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+
+
+def desktop_entry(names):
+    roots = [USER_SHARE, *map(Path, os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":"))]
+    for name in names:
+        for root in roots:
+            path = root / "applications" / name
+            if path.is_file():
+                launch(["gio", "launch", str(path)])
+                return
+    raise ValueError("Die Anwendung ist noch nicht installiert.")
+
+
+def folder(kind):
+    if kind in ("HOME", "GAMES", "PROJECTS"):
+        path = HOME if kind == "HOME" else HOME / ("Games" if kind == "GAMES" else "Projekte")
+    else:
+        result = subprocess.run(["xdg-user-dir", kind], text=True, capture_output=True, check=True)
+        path = Path(result.stdout.strip())
+    # Places are explicit actions; create the personal projects/games directory on first use.
+    path.mkdir(parents=True, exist_ok=True)
+    launch(["xdg-open", str(path)])
+
+
+def plasma_script(script):
+    import dbus
+    obj = dbus.SessionBus().get_object("org.kde.plasmashell", "/PlasmaShell")
+    return str(obj.evaluateScript(script, dbus_interface="org.kde.PlasmaShell", timeout=30))
+
+
+def install_user():
+    """Install precisely the files shipped in the image, without administrator access."""
+    source_share = DATA.parent
+    for relative in ("witzelfitz-desktop", f"plasma/plasmoids/{HUB}",
+                     f"plasma/wallpapers/{WALLPAPER}", "plasma/look-and-feel/io.github.witzelfitz.night"):
+        shutil.copytree(source_share / relative, USER_SHARE / relative, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    (USER_SHARE / "witzelfitz-desktop/.managed").write_text("Managed by witzelfitz-desktop install-user\n")
+    color_directory = USER_SHARE / "color-schemes"
+    color_directory.mkdir(parents=True, exist_ok=True)
+    for path in (source_share / "color-schemes").glob("Witzelfitz*.colors"):
+        shutil.copy2(path, color_directory / path.name)
+    (HOME / ".local/bin").mkdir(parents=True, exist_ok=True)
+    target = HOME / ".local/bin/witzelfitz-desktop"
+    if Path(__file__).resolve() != target.resolve():
+        shutil.copy2(__file__, target)
+    target.chmod(0o755)
+    manager_source = Path(__file__).resolve().with_name("witzelfitz-scenes")
+    manager_target = target.with_name("witzelfitz-scenes")
+    if manager_source != manager_target.resolve():
+        shutil.copy2(manager_source, manager_target)
+    manager_target.chmod(0o755)
+    applications = USER_SHARE / "applications"
+    applications.mkdir(parents=True, exist_ok=True)
+    entry = source_share / "applications/io.github.witzelfitz.Scenes.desktop"
+    (applications / entry.name).write_text(entry.read_text().replace("Exec=witzelfitz-scenes", f"Exec={manager_target}"))
+    service_dir = USER_SHARE / "dbus-1/services"
+    service_dir.mkdir(parents=True, exist_ok=True)
+    (service_dir / f"{SERVICE}.service").write_text(
+        f"[D-BUS Service]\nName={SERVICE}\nExec={target} serve\n")
+    # Use a user override for the same image-wide first-login autostart entry.
+    autostart = CONFIG / "autostart"
+    autostart.mkdir(parents=True, exist_ok=True)
+    (autostart / "witzelfitz-desktop.desktop").write_text(
+        f"[Desktop Entry]\nType=Application\nName=Witzelfitz Desktop\n"
+        f"Exec={target} apply --if-unconfigured\nOnlyShowIn=KDE;\nX-KDE-autostart-phase=2\n")
+    # Reload discovery when this directory was created after the session bus started.
+    import dbus
+    try:
+        dbus.SessionBus().get_object("org.freedesktop.DBus", "/org/freedesktop/DBus").ReloadConfig(
+            dbus_interface="org.freedesktop.DBus")
+    except dbus.DBusException:
+        pass  # Offline installs discover the service at the next login.
+    print(f"Desktop-Pakete installiert: {USER_SHARE}")
+
+
+def apply_profile(if_unconfigured=False):
+    marker = STATE / "profile.json"
+    if if_unconfigured and marker.exists():
+        return
+    # Ensure Plasma knows the package before changing any user configuration.
+    available = subprocess.run(["kpackagetool6", "--type", "Plasma/Applet", "--show", HUB],
+                               capture_output=True, text=True)
+    if available.returncode:
+        raise ValueError("Hub-Paket fehlt. Zuerst 'witzelfitz-desktop install-user' ausführen.")
+    STATE.mkdir(parents=True, exist_ok=True)
+    backup = STATE / ("backup-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+    backup.mkdir(mode=0o700)
+    filenames = ("plasma-org.kde.plasma.desktop-appletsrc", "kdeglobals", "plasmarc")
+    for name in filenames:
+        path = CONFIG / name
+        if path.exists():
+            shutil.copy2(path, backup / name)
+    # Ask Plasma to flush state and keep a human-readable export for inspection.
+    import dbus
+    obj = dbus.SessionBus().get_object("org.kde.plasmashell", "/PlasmaShell")
+    layout = bytes(obj.dumpCurrentLayoutJS(dbus_interface="org.kde.PlasmaShell"))
+    (backup / "layout.js").write_bytes(layout)
+    script = (DATA / "layout.js").read_text()
+    result = plasma_script(script)
+    if "WITZELFITZ_OK" not in result:
+        raise ValueError(f"Desktop konnte nicht eingerichtet werden: {result}. Sicherung: {backup}")
+    scheme = DATA / "WitzelfitzNight.colors"
+    dest = USER_SHARE / "color-schemes"
+    dest.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(scheme, dest / scheme.name)
+    if shutil.which("plasma-apply-colorscheme"):
+        subprocess.run(["plasma-apply-colorscheme", "WitzelfitzNight"], check=True)
+    if shutil.which("plasma-apply-desktoptheme"):
+        subprocess.run(["plasma-apply-desktoptheme", "breeze-dark"], check=True)
+    # First backup remains the restore target, even if the user reapplies the profile.
+    previous = json.loads(marker.read_text()) if marker.exists() else {"backup": str(backup)}
+    atomic_json(marker, {"version": 1, "backup": previous["backup"], "restored": False})
+    if not SETTINGS.exists():
+        atomic_json(SETTINGS, DEFAULTS)
+    bus = dbus.SessionBus()
+    if bus.name_has_owner(SERVICE):
+        bus.get_object(SERVICE, OBJECT).Action("appearance", "", dbus_interface=IFACE, timeout=10)
+    print(f"Witzelfitz-Hub aktiv. Sicherung: {backup}")
+    print("Zurück: witzelfitz-desktop restore")
+
+
+def restore_profile():
+    marker = STATE / "profile.json"
+    if not marker.exists():
+        raise ValueError("Es gibt kein gespeichertes Desktop-Profil.")
+    backup = Path(json.loads(marker.read_text())["backup"])
+    if not (backup / "plasma-org.kde.plasma.desktop-appletsrc").is_file():
+        raise ValueError(f"Sicherung fehlt: {backup}")
+    # Stop Plasma before replacing its state: otherwise it overwrites restored files on exit.
+    subprocess.run(["systemctl", "--user", "stop", "plasma-plasmashell.service"], check=True)
+    try:
+        for name in ("plasma-org.kde.plasma.desktop-appletsrc", "kdeglobals", "plasmarc"):
+            original = backup / name
+            if original.exists():
+                shutil.copy2(original, CONFIG / name)
+        # Leave the marker in place to prevent automatic reactivation at next login.
+        atomic_json(marker, {"version": 1, "backup": str(backup), "restored": True})
+    finally:
+        subprocess.run(["systemctl", "--user", "start", "plasma-plasmashell.service"], check=True)
+    print("Vorheriger Desktop wiederhergestellt. Erneut aktivieren: witzelfitz-desktop apply")
+
+
+def serve():
+    import dbus
+    import dbus.service
+    from dbus.mainloop.glib import DBusGMainLoop
+    from gi.repository import GLib
+    DBusGMainLoop(set_as_default=True)
+    session, system = dbus.SessionBus(), dbus.SystemBus()
+    if session.name_has_owner(SERVICE):
+        return
+    name = dbus.service.BusName(SERVICE, session, do_not_queue=True)
+
+    class Desktop(dbus.service.Object):
+        def __init__(self):
+            super().__init__(name, OBJECT)
+            self.settings = read_settings()
+            self.snapshot = ""
+            self.refresh_pending = False
+            self.appearance = Appearance(DATA, USER_SHARE)
+            self.refresh()
+            GLib.timeout_add_seconds(30, self.refresh)
+            system.add_signal_receiver(self.changed, signal_name="PropertiesChanged",
+                                       dbus_interface="org.freedesktop.DBus.Properties", bus_name="org.freedesktop.UPower")
+            system.add_signal_receiver(self.changed, signal_name="PropertiesChanged",
+                                       dbus_interface="org.freedesktop.DBus.Properties", bus_name="net.hadess.PowerProfiles")
+            system.add_signal_receiver(self.sleep_changed, signal_name="PrepareForSleep",
+                                       dbus_interface="org.freedesktop.login1.Manager",
+                                       bus_name="org.freedesktop.login1", path="/org/freedesktop/login1")
+            session.add_signal_receiver(self.changed, signal_name="PropertiesChanged",
+                                        dbus_interface="org.freedesktop.DBus.Properties",
+                                        path="/org/mpris/MediaPlayer2")
+            session.add_signal_receiver(self.changed, signal_name="ActiveChanged",
+                                        dbus_interface="org.freedesktop.ScreenSaver")
+            session.add_signal_receiver(self.owner_changed, signal_name="NameOwnerChanged",
+                                        dbus_interface="org.freedesktop.DBus")
+
+        def changed(self, *args):
+            if not self.refresh_pending:
+                self.refresh_pending = True
+                GLib.idle_add(self.refresh_once)
+
+        def owner_changed(self, name, old, new):
+            if str(name).startswith("org.mpris.MediaPlayer2."):
+                self.changed()
+
+        def sleep_changed(self, sleeping):
+            if not sleeping:
+                self.appearance.signature = None
+                self.changed()
+
+        def refresh_once(self):
+            self.refresh_pending = False
+            self.refresh()
+            return False
+
+        def get_properties(self, bus, service, path, interface):
+            try:
+                return bus.get_object(service, path).GetAll(interface,
+                    dbus_interface="org.freedesktop.DBus.Properties", timeout=2)
+            except dbus.DBusException:
+                return {}
+
+        def refresh(self):
+            self.settings = read_settings()
+            value = dict(self.settings, scenes=scenes(), palettes=load_palettes(DATA), onBattery=False, battery=None,
+                         locked=False, profile="", profiles=[], track="", artist="", playing=False,
+                         rgb=bool(os.access("/dev/acer-gkbbl-static-0", os.W_OK)))
+            active = next((scene for scene in value["scenes"] if scene["id"] == self.settings["theme"]), None)
+            try:
+                restored = json.loads((STATE / "profile.json").read_text()).get("restored", False)
+            except (OSError, ValueError):
+                restored = False
+            if active and not restored:
+                value.update(self.appearance.apply(active, self.settings))
+            else:
+                self.appearance.signature = None
+                value.update(appearanceError="", keyboardApplied=False, colorsApplied=False, keyboardZones=[])
+            power = self.get_properties(system, "org.freedesktop.UPower", "/org/freedesktop/UPower", "org.freedesktop.UPower")
+            battery = self.get_properties(system, "org.freedesktop.UPower", "/org/freedesktop/UPower/devices/DisplayDevice", "org.freedesktop.UPower.Device")
+            value["onBattery"] = bool(power.get("OnBattery", False))
+            if battery.get("IsPresent"):
+                value["battery"] = round(float(battery.get("Percentage", 0)))
+            profiles = self.get_properties(system, "net.hadess.PowerProfiles", "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles")
+            value["profile"] = str(profiles.get("ActiveProfile", ""))
+            value["profiles"] = [str(p["Profile"]) for p in profiles.get("Profiles", [])]
+            try:
+                value["locked"] = bool(session.get_object("org.freedesktop.ScreenSaver", "/ScreenSaver").GetActive(
+                    dbus_interface="org.freedesktop.ScreenSaver", timeout=2))
+            except dbus.DBusException:
+                pass
+            media = []
+            for service in session.list_names():
+                if str(service).startswith("org.mpris.MediaPlayer2."):
+                    props = self.get_properties(session, service, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player")
+                    media.append((str(service), props))
+            media.sort(key=lambda pair: pair[1].get("PlaybackStatus") != "Playing")
+            self.player = media[0][0] if media else None
+            if media:
+                props = media[0][1]
+                metadata = props.get("Metadata", {})
+                value["track"] = str(metadata.get("xesam:title", ""))
+                value["artist"] = ", ".join(map(str, metadata.get("xesam:artist", [])))
+                value["playing"] = props.get("PlaybackStatus") == "Playing"
+            snapshot = json.dumps(value, ensure_ascii=False)
+            if snapshot != self.snapshot:
+                self.snapshot = snapshot
+                self.PropertiesChanged(IFACE, {"Snapshot": dbus.String(snapshot)}, [])
+            return True
+
+        @dbus.service.signal("org.freedesktop.DBus.Properties", signature="sa{sv}as")
+        def PropertiesChanged(self, interface, changed, invalidated):
+            pass
+
+        @dbus.service.method("org.freedesktop.DBus.Properties", in_signature="ss", out_signature="v")
+        def Get(self, interface, key):
+            if interface == IFACE and key == "Snapshot":
+                return dbus.String(self.snapshot)
+            raise dbus.exceptions.DBusException("Unbekannte Eigenschaft", name=IFACE + ".InvalidProperty")
+
+        @dbus.service.method("org.freedesktop.DBus.Properties", in_signature="s", out_signature="a{sv}")
+        def GetAll(self, interface):
+            return {"Snapshot": dbus.String(self.snapshot)} if interface == IFACE else {}
+
+        @dbus.service.method(IFACE, in_signature="ss", out_signature="s")
+        def Action(self, action, parameter):
+            try:
+                self.action(str(action), str(parameter))
+                self.refresh()
+                return ""
+            except (ValueError, OSError, subprocess.SubprocessError, dbus.DBusException) as exc:
+                return str(exc)
+
+        def action(self, action, parameter):
+            applications = {
+                "steam": ["steam.desktop"], "lutris": ["net.lutris.Lutris.desktop"],
+                "terminal": ["org.kde.konsole.desktop"], "editor": ["code.desktop", "com.visualstudio.code.desktop", "org.kde.kate.desktop"],
+                "dev": ["dev.desktop"], "effects": ["com.github.wwmm.easyeffects.desktop"],
+                "settings": ["systemsettings.desktop"], "gpu": ["cardwire-gui.desktop"],
+                "manager": ["io.github.witzelfitz.Scenes.desktop"],
+            }
+            if action in applications:
+                desktop_entry(applications[action])
+            elif action == "bigpicture":
+                launch(["steam", "-bigpicture"])
+            elif action == "agents":
+                launch(["konsole", "-e", "tmux", "new-session", "-A", "-s", "agents"])
+            elif action == "folder" and parameter in ("HOME", "DESKTOP", "DOWNLOAD", "DOCUMENTS", "PICTURES", "GAMES", "PROJECTS"):
+                folder(parameter)
+            elif action == "kcm" and parameter in ("kcm_pulseaudio", "kcm_networkmanagement", "kcm_bluetooth", "kcm_powerdevilprofilesconfig", "kcm_brightness", "kcm_lookandfeel", "kcm_kwin_effects", "kcm_wallpaper"):
+                launch(["systemsettings", parameter])
+            elif action == "reload" and not parameter:
+                self.settings = read_settings()
+                atomic_json(SETTINGS, self.settings)
+            elif action == "theme" and parameter in [scene["id"] for scene in scenes()]:
+                self.settings["theme"] = parameter
+                atomic_json(SETTINGS, self.settings)
+            elif action in ("motion", "pauseOnBattery", "syncKeyboard", "syncColors") and parameter in ("true", "false"):
+                self.settings[action] = parameter == "true"
+                atomic_json(SETTINGS, self.settings)
+            elif action == "keyboardBrightness" and parameter.isascii() and parameter.isdigit() and 0 <= int(parameter) <= 100:
+                self.settings[action] = int(parameter)
+                atomic_json(SETTINGS, self.settings)
+            elif action == "appearance" and not parameter:
+                self.appearance.signature = None
+            elif action == "profile" and parameter in ("power-saver", "balanced", "performance"):
+                system.get_object("net.hadess.PowerProfiles", "/net/hadess/PowerProfiles").Set(
+                    "net.hadess.PowerProfiles", "ActiveProfile", dbus.String(parameter),
+                    dbus_interface="org.freedesktop.DBus.Properties", timeout=3)
+            elif action == "media" and parameter in ("PlayPause", "Next", "Previous"):
+                if not self.player:
+                    raise ValueError("Aktuell ist kein Medienplayer geöffnet.")
+                session.get_object(self.player, "/org/mpris/MediaPlayer2").get_dbus_method(
+                    parameter, "org.mpris.MediaPlayer2.Player")()
+            elif action == "volume" and parameter in ("up", "down", "mute"):
+                args = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"] if parameter == "mute" else [
+                    "wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_AUDIO_SINK@", "5%+" if parameter == "up" else "5%-"]
+                subprocess.run(args, check=True, timeout=3, capture_output=True)
+            elif action == "rgb" and parameter in ("violet", "ocean", "rose"):
+                colors = {"violet": (132, 100, 220), "ocean": (45, 180, 200), "rose": (220, 100, 155)}
+                # The Acer protocol is documented by the pinned facer upstream, not inferred here.
+                r, g, b = colors[parameter]
+                self.settings["syncKeyboard"] = False
+                atomic_json(SETTINGS, self.settings)
+                with open("/dev/acer-gkbbl-static-0", "wb", buffering=0) as device:
+                    for packet in keyboard_packets([f"#{r:02x}{g:02x}{b:02x}"] * 4, self.settings["keyboardBrightness"]):
+                        device.write(packet)
+            else:
+                raise ValueError("Diese Aktion ist nicht verfügbar.")
+
+    desktop = Desktop()
+    GLib.MainLoop().run()
+
+
+def validate():
+    import xml.etree.ElementTree as ET
+    assert (DATA.parent.parent / "bin/witzelfitz-scenes").is_file()
+    assert (DATA.parent / "applications/io.github.witzelfitz.Scenes.desktop").is_file()
+    for profile in load_palettes(DATA):
+        path = DATA.parent / "color-schemes" / (profile["scheme"] + ".colors")
+        assert path.read_text() == scheme_text(profile, DATA / "WitzelfitzNight.colors")
+    for scene in scene_library().bundled():
+        if not (DATA / "wallpapers" / scene["file"]).is_file():
+            raise ValueError(f"Hintergrund fehlt: {scene['file']}")
+    for kind, ident in (("plasmoids", HUB), ("wallpapers", WALLPAPER)):
+        root = DATA.parent / "plasma" / kind / ident
+        meta = json.loads((root / "metadata.json").read_text())
+        assert meta["KPlugin"]["Id"] == ident
+        assert (root / "contents/ui/main.qml").is_file()
+        if (root / "contents/config/main.xml").exists():
+            ET.parse(root / "contents/config/main.xml")
+    print("Desktop-Pakete und Szenen vollständig.")
+
+
+def main():
+    # A local preview install hands off to the OS version after an image upgrade.
+    system_command = Path("/usr/bin/witzelfitz-desktop")
+    if Path(__file__).resolve().parent == (HOME / ".local/bin").resolve() and system_command.is_file():
+        os.execv(str(system_command), [str(system_command), *sys.argv[1:]])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=("serve", "install-user", "apply", "restore", "validate", "status"))
+    parser.add_argument("--if-unconfigured", action="store_true")
+    args = parser.parse_args()
+    try:
+        if args.command == "serve":
+            serve()
+        elif args.command == "install-user":
+            install_user()
+        elif args.command == "apply":
+            if DATA == Path("/usr/share/witzelfitz-desktop") and (USER_SHARE / "witzelfitz-desktop/.managed").exists():
+                install_user()  # Refresh managed preview copies; preserve personal settings/layout.
+            apply_profile(args.if_unconfigured)
+        elif args.command == "restore":
+            restore_profile()
+        elif args.command == "validate":
+            validate()
+        else:
+            print(json.dumps(read_settings(), indent=2))
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        print(f"Witzelfitz Desktop: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
