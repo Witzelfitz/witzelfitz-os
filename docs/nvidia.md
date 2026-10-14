@@ -52,7 +52,10 @@ python3 tools/check-nvidia-health.py --output output/nvidia-after-steam.json
 Das Prüfwerkzeug liest Journal, Deployment-Metadaten und vorhandene procfs/sysfs-
 Dateien. Es weckt die GPU nicht mit `nvidia-smi`, startet kein Spiel und löst
 keinen Suspend aus. Exit-Code 1 bedeutet GPU-Fehler, 2 eine unvollständige
-Prüfung. Fehlerfreiheit im Journal allein ist kein Stabilitätsnachweis.
+Prüfung und 3 interne NVIDIA-Treiberwarnungen wie fehlgeschlagene Assertions
+oder einen ungültigen Lock-Zustand. Warnungen sind kein Nachweis eines Absturzes,
+verhindern aber die Bewertung als fehlerfreier Lauf. Fehlerfreiheit im Journal
+allein ist kein Stabilitätsnachweis.
 
 Erst nach erfolgreicher GPU-Nutzung und fehlerfreiem Journal einen manuellen
 Standby-/Aufwachzyklus durchführen; offene Arbeit vorher speichern. Bei erneutem
