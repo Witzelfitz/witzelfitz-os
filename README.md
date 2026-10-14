@@ -191,35 +191,27 @@ Architektur, Tests und Grenzen: [docs/desktop.md](docs/desktop.md).
 
 Das Image wird von GitHub Actions täglich neu gebaut, also mit aktueller Bazzite-Basis, aktuellem Kernel und Nvidia-Treiber, und signiert nach `ghcr.io/witzelfitz/witzelfitz-os:latest` geladen. Ein installiertes System holt die Updates mit `uupd` bzw. `bootc upgrade`.
 
-Einmalige Umstellung eines Systems, das noch auf `localhost/witzelfitz-os` läuft:
-Schlüssel und Signaturrichtlinie müssen **vor dem ersten Wechsel** aus einer
-vertrauenswürdig bezogenen Kopie dieses Repositorys installiert werden.
-Im Repository-Verzeichnis ausführen (benötigt `jq`):
+Einmalige Umstellung eines Systems, das noch auf `localhost/witzelfitz-os`
+oder einem lokalen OCI-Export läuft: im aktuellen Repository ausführen:
 
 ```bash
-# Bei Fehlern abbrechen; niemals ohne erfolgreiche Richtlinieninstallation wechseln.
-(
-set -euo pipefail
-cmp cosign.pub system_files/etc/pki/containers/witzelfitz-os.pub
-sudo install -D -m 0644 cosign.pub /etc/pki/containers/witzelfitz-os.pub
-sudo install -D -m 0644 system_files/etc/containers/registries.d/witzelfitz-os.yaml /etc/containers/registries.d/witzelfitz-os.yaml
-policy=$(mktemp)
-trap 'rm -f "$policy"' EXIT
-sudo jq '.transports.docker["ghcr.io/witzelfitz/witzelfitz-os"] = [{
-  "type": "sigstoreSigned",
-  "keyPath": "/etc/pki/containers/witzelfitz-os.pub",
-  "signedIdentity": {"type": "matchRepository"}
-}]' /etc/containers/policy.json > "$policy"
-sudo install -m 0644 "$policy" /etc/containers/policy.json
-sudo bootc switch --enforce-container-sigpolicy ghcr.io/witzelfitz/witzelfitz-os:latest
-)
-# Nur nach erfolgreichem Wechsel:
+sudo ./tools/use-signed-updates.sh
+# Erst nach erfolgreichem Bereitstellen und zu einem passenden Zeitpunkt:
 systemctl reboot
 ```
 
-Ein lokales ISO enthält zunächst das Image `localhost/witzelfitz-os:latest`.
-Für Registry-Updates ist dieser Wechsel auch nach einer neuen ISO-Installation
-nötig; das Vorhandensein von `policy.json` allein aktiviert keine signierten Updates.
+Das Werkzeug prüft die Signatur des veröffentlichten Digests, installiert die
+Signaturrichtlinie, pinnt das laufende System als Rückkehrpunkt und stellt
+`latest` mit erzwungener Signaturprüfung bereit. Ein bereits vorgemerktes
+Deployment wird nicht ersetzt. Es startet den Laptop nicht selbst neu.
+Das Repository und sein öffentlicher Schlüssel müssen vertrauenswürdig bezogen sein.
+
+Die CI lädt zunächst einen eindeutigen Kandidaten hoch, signiert und prüft ihn,
+und setzt erst danach die öffentlichen Update-Tags; `latest` folgt zuletzt.
+Ein lokales ISO oder OCI-Test-Image folgt bis zur Umstellung weiter seiner
+lokalen Quelle. Der laufende `uupd.timer` allein ändert diese Quelle nicht.
+
+NVIDIA-/Standby-Abnahme und Vergleich mit dem Basisimage: [docs/nvidia.md](docs/nvidia.md).
 
 **Secure Boot muss aus bleiben**, solange `facer` unsigniert ist.
 

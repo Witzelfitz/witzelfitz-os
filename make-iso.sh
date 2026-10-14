@@ -7,7 +7,7 @@ set -euo pipefail
 
 IMAGE="localhost/witzelfitz-os:latest"
 BIB="quay.io/centos-bootc/bootc-image-builder:latest"
-PKGS="tmux fzf ripgrep fd-find bat zoxide git-delta direnv btop neovim python3-dbus python3-gobject python3-pyside6"
+PKGS="patch tmux fzf ripgrep fd-find bat zoxide git-delta direnv btop neovim python3-dbus python3-gobject python3-pyside6"
 
 cd "$(dirname "$(readlink -f "$0")")"
 
