@@ -1,0 +1,17 @@
+[Unit]
+Description=Enable Bluetooth ERTM for Acer Predator PT515-51 desktop profiles
+Documentation=https://github.com/Witzelfitz/witzelfitz-os/blob/main/docs/system-fixes.md
+Before=bluetooth.service
+ConditionPathExists=/sys/devices/virtual/dmi/id/sys_vendor
+ConditionPathExists=/sys/devices/virtual/dmi/id/product_name
+
+[Service]
+Type=oneshot
+ExecCondition=/usr/bin/grep -Fxq Acer /sys/devices/virtual/dmi/id/sys_vendor
+ExecCondition=/usr/bin/grep -Fxq "Predator PT515-51" /sys/devices/virtual/dmi/id/product_name
+ExecStart=/usr/bin/modprobe bluetooth
+ExecStart=/usr/bin/sh -c 'printf N > /sys/module/bluetooth/parameters/disable_ertm'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=bluetooth.service

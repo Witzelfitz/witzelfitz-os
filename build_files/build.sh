@@ -9,6 +9,7 @@ cp -avf "/ctx/system_files"/. /
 python3 /ctx/public-assets.py --root /
 chmod 0755 /usr/bin/witzelfitz-setup
 chmod 0755 /usr/bin/witzelfitz-desktop /usr/bin/witzelfitz-scenes
+chmod 0755 /usr/libexec/witzelfitz-nvidia-settings-load
 
 ### Terminal- und Agenten-Werkzeuge (alle aus den Fedora-Repos)
 dnf5 install -y \
@@ -75,3 +76,4 @@ install -m 0644 /tmp/policy.json "$POLICY"
 
 ### Dienste
 systemctl enable podman.socket
+systemctl enable bluetooth-enable-ertm.service
