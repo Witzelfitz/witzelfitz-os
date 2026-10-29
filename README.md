@@ -15,6 +15,8 @@ Am 9.10.2026 wurden der anonyme Registry-Zugriff und die cosign-Signatur mit
 eigenständige Projekt-Domain oder formale Registrierung als Linux-Distribution.
 
 Die Ergebnisse der Quellcodeprüfung stehen in [AUDIT.md](AUDIT.md).
+Die Image-Korrekturen für NVIDIA-Autostart und Bluetooth sind mit Tests und
+Hardwaregrenzen in [Systemkorrekturen](docs/system-fixes.md) dokumentiert.
 
 ## Stand (Image-/VM-Test laut bisheriger Dokumentation vom 6.10.2026)
 

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=NVIDIA X Server Settings
+Comment=Load saved NVIDIA settings when a configuration exists
+Exec=/usr/libexec/witzelfitz-nvidia-settings-load
+TryExec=/usr/libexec/witzelfitz-nvidia-settings-load
+Terminal=false
+Icon=nvidia-settings
+Categories=Settings;

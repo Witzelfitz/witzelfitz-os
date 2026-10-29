@@ -36,9 +36,10 @@ jobs:
           persist-credentials: false
       - name: Shell und Setup pruefen
         run: |
-          shellcheck make-iso.sh test-iso.sh build_files/*.sh system_files/usr/bin/witzelfitz-setup tools/*.sh
+          shellcheck make-iso.sh test-iso.sh build_files/*.sh system_files/usr/bin/witzelfitz-setup system_files/usr/libexec/witzelfitz-nvidia-settings-load tools/*.sh
           python3 -m unittest discover -s tests -p test_setup.py -v
           python3 -m unittest discover -s tests -p test_activation.py -v
+          python3 -m unittest discover -s tests -p test_system_fixes.py -v
       - name: PowerShell-Syntax pruefen
         shell: pwsh
         run: |
@@ -86,6 +87,13 @@ jobs:
           sudo podman run --rm "${IMAGE_NAME}:latest" test -x /usr/bin/witzelfitz-setup
           sudo podman run --rm "${IMAGE_NAME}:latest" test -x /usr/bin/witzelfitz-desktop
           sudo podman run --rm "${IMAGE_NAME}:latest" test -x /usr/bin/witzelfitz-scenes
+          sudo podman run --rm "${IMAGE_NAME}:latest" sh -eu -c '
+            test -x /usr/libexec/witzelfitz-nvidia-settings-load
+            sh -n /usr/libexec/witzelfitz-nvidia-settings-load
+            desktop-file-validate /etc/xdg/autostart/nvidia-settings-load.desktop
+            systemctl is-enabled bluetooth-enable-ertm.service
+            systemd-analyze verify --man=no /usr/lib/systemd/system/bluetooth-enable-ertm.service
+          '
           sudo podman run --rm "${IMAGE_NAME}:latest" python3 /usr/bin/witzelfitz-desktop validate
           sudo podman run --rm --network=none \
             -v "$PWD/build_files/public-assets.py:/check-public-assets.py:ro,z" \

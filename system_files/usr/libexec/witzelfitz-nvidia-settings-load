@@ -1,0 +1,6 @@
+#!/bin/sh
+# No GPU or no saved settings is normal, not a failed desktop startup.
+if [ ! -c /dev/nvidia0 ] || [ ! -r "$HOME/.nvidia-settings-rc" ]; then
+    exit 0
+fi
+exec /usr/bin/nvidia-settings --load-config-only
